@@ -1,0 +1,20 @@
+{
+	"user":[
+		{
+			"id":4,
+			"name":"张三三",
+			"gender":"0",
+			"age":"23",
+      "hobbies":"吃饭、睡觉、打豆豆",
+      "email": "58tongcheng@chrispaul.com"
+		},
+		{
+      "id":58,
+			"name":"李四",
+			"gender":"0",
+			"age":"22",
+      "hobbies":"无",
+      "email": "58tongcheng@chrispaul.com"
+		}
+	]
+}
