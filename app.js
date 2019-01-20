@@ -17,6 +17,9 @@ app.use(morgan('dev'));// 命令行中显示程序运行日志,便于bug调试
 app.use(bodyParser.urlencoded({ extended: false })) // parse application/x-www-form-urlencoded
 app.use(bodyParser.json()) // parse application/json
 
+app.use(router.get('/', (req, res) => {
+  console.log('/req', req)
+}))
 app.use('/api', router); // 为所有路由加上/api前缀
 
 // //允许跨域

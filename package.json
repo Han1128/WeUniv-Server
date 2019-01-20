@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "server": "nodemon app.js",
-    "inspect": "node --inspect app.js"
+    "inspect": "nodemon --inspect app.js"
   },
   "repository": {
     "type": "git",
@@ -20,9 +20,13 @@
   },
   "homepage": "https://github.com/Han1128/WeUniv-Server#readme",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "express": "^4.16.4",
     "jsonwebtoken": "^8.4.0",
+    "mongoose": "^5.4.3",
     "morgan": "^1.9.1",
+    "nodemailer": "^5.1.1",
+    "nodemailer-smtp-transport": "^2.7.4",
     "passport": "^0.4.0",
     "passport-http-bearer": "^1.0.1"
   },

@@ -10,28 +10,62 @@ const Schema = mongoose.Schema;
  */
 const userSchema = new Schema(
   {
-    name: { 
+    username: { 
       type: String,
       unique: true, // 不可重复
       require: true // 不可为空
     },
-    password: { 
+    password: {
       type: String
     },
     gender : { 
-      type: String 
+      type: String // 1代表男性 0代表女性
     },
     age : { 
       type: Number 
-    },
-    hobbies : { 
-      type: String 
     },
     email : { 
       type: String,
       unique: true, // 不可重复
       require: true // 不可为空
+    },
+    status: {
+      type: Number,
+      default: 0
+    },
+    date: {
+      type: Date
+    },
+    code: {
+      type: String
     }
+    // token: {
+    //   type: String
+    // },
+    // description: {
+    //   type: String,
+    //   default: '这个人很懒,什么都没留下'
+    // },
+    // article: [
+    //   { type: mongoose.Schema.Types.ObjectId, ref: 'article' }
+    // ]
+    // avatar: {
+    //   type: String
+    // },
+    // bg_pic: {
+    //   type: String
+    // },
+    // create_time: {
+    //   type: Date
+    // },
+    // following_user: [{
+    //   type: mongoose.Schema.Types.ObjectId, 
+    //   ref: 'User'
+    // }],
+    // follower_user: [{
+    //   type: mongoose.Schema.Types.ObjectId, 
+    //   ref: 'User'
+    // }]
   },
   //{versionKey: false}是干嘛用？如果不加这个设置，我们通过mongoose第一次创建某个集合时，
   // 它会给这个集合设定一个versionKey属性值，我们不需要，所以不让它显示
