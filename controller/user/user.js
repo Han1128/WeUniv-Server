@@ -1,28 +1,8 @@
 const userModel = require('../../models/user/user');
-const config = require('../../config/index');
 const Bcrypt = require('../../utils/pwdbcrypt');
 const Mailer = require('../../utils/mailtransport');
-const jwt = require('jsonwebtoken');
+const Token = require('../../middleware/token');
 
-function createToken (data) {
-  let token = jwt.sign(data, config.secret, {
-    expiresIn: 10080
-  });
-  return token;
-  // let created = Math.floor(Date.now() / 1000);
-  //   let cert = fs.readFileSync(path.join(__dirname, '../config/pri.pem'));//私钥
-  //   let token = jwt.sign({
-  //       data,
-  //       exp: created + 3600 * 24
-  //   }, cert, {algorithm: 'RS256'});
-  //   return token;
-}
-function validateToken (token) {
-  jwt.verify(token, config.secret, (err, decoded) => {
-    console.log('开始验证');
-    return err ? false : true;
-  })
-}
 // 邮箱验证是否存在
 function mailValidate (mail) {
   userModel.findOne({ email: mail }, function (err, doc) {
@@ -36,47 +16,41 @@ class User {
    * @param { Object } res 
    */
   userLogin (req, res) {
-    // 验证token
-    // if (!req.headers.authorization) {
-    //   return res.status(401).send(JSON.stringify({
-    //     type: 'error',
-    //     message: '未授权',
-    //     status: 0,
-    //     data: []
-    //   }))
-    // }
-    // else if (!validateToken(req.headers.authorization)){
-    //   return res.status(401).send(JSON.stringify({
-    //     type: 'error',
-    //     message: '验证过期',
-    //     status: 0,
-    //     data: []
-    //   }))
-    // }
-    // 校验信息
-    userModel.find({ email: req.body.email }, function (err, ret) {
+    // 登录信息可能是用户名或者邮箱
+    userModel.find({ $or: [{ email: req.body.email }, { username: req.body.email }] }, function (err, ret) {
       if (err) {
         res.send({
           type: 'error',
           message: '账号不存在',
-          status: 0,
-          data: []
+          status: 0
         })
       }
       else {
-        console.log('ret', ret);
         // console.log('验证结果', Bcrypt.untieSalt(req.body.password, ret[0].password))
+        // 将从数据库查到的用户密码进行解密比较
         if (ret.length !== 0 && Bcrypt.untieSalt(req.body.password, ret[0].password)) {
           // 生成token
-          let token = createToken({ name: req.body.email });
-          res.send({
-            type: 'success',
-            message: '登录成功',
-            status: 1,
-            data: {
-              name: req.body.email,
-              token
+          let token = Token.createToken({ name: req.body.email, longinDate: +new Date});
+          // 更新token
+          userModel.update({ username: ret[0].username }, {$set: { token : token }}, function (err) {
+            if (err) {
+              res.send({
+                type: 'error',
+                message: '更新token出错',
+                status: 0
+              })
             }
+            res.send({
+              type: 'success',
+              message: '登录成功',
+              status: 1,
+              data: {
+                userid: ret[0]._id,
+                username: ret[0].username,
+                email: ret[0].email,
+                token
+              }
+            })
           })
         }
         else {
@@ -90,7 +64,26 @@ class User {
       }
     })
   }
-
+  checkToken (req, res) {
+    userModel.findOne({ username: req.query.username }, function(err, ret) {
+      if (err) {
+        res.json({
+            status: 0,
+            success: false,
+            message: '用户！',
+            data:[]
+        })
+      }
+      // Token.validateToken(ret.token)
+      console.log('token ', Token.checkToken(ret.token))
+      res.send({
+        type: 'success',
+        message: '验证成功',
+        status: 1,
+        data: []
+      })
+    })
+  }
   /**
    * 用户注册
    * @param {Object} req 
@@ -103,14 +96,17 @@ class User {
       const randomCode = Math.floor(Math.random()*10000000); // 生成六位随机码
       const newUser = new userModel({
         username: req.body.username,
+        userType: req.body.userType,
         password: Bcrypt.genSalt(req.body.password),
         gender: req.body.gender,
-        age: req.body.age,
+        birth: req.body.birth,
         email: req.body.email,
+        token: '',
         status: 0,
-        date: new Date(),
+        createTime: new Date(),
         code: randomCode
       })
+      // node版本太低使用不了async和await
       newUser.save(async function(err) {
         if (err) {
           res.json({
@@ -152,77 +148,50 @@ class User {
     }
   }
   /**
-   * 邮箱验证
+   * 用户从邮箱的验证链接请求邮箱验证
    * @param {Object} req 
    * @param {Object} res 
    */
   checkMail(req, res) {
-    // console.log('checkMail', req);
     // console.log('startTime', req._startTime)
-    userModel.findOne({ email: req.query.account }, function(err, ret) {
+    userModel.findOne({ email: req.body.account }, function(err, ret) {
       if (err) {
         res.json({
-            status: 0,
             success: false,
-            message: '邮箱不存在！',
-            data:[]
+            message: '邮箱不存在！'
         })
       }
-      // console.log('ret', ret)
-      if (ret) {
-        if (ret.status === 1) {
+      if (req.body.code === ret.code) {
+        console.log('验证码正确 date', new Date(req._startTime) - new Date(ret.createTime))
+        if (new Date(req._startTime) - new Date(ret.createTime) < 900000) {
+          // 验证时间小于15min
+          userModel.update({ email: ret.email }, { status: 1}, function(updateErr, updateRet) {
+            if (updateErr) {
+              res.json({
+                  success: false,
+                  message: '更新失败!'
+              })
+            }
             res.json({
-                status: 0,
-                success: false,
-                message: '该邮箱已激活,请不要重复验证！',
-                data:[]
+                success: true,
+                message: '注册成功!'
             })
-        }
-        else if (req.query.code === ret.code) {
-          console.log('验证码正确')
-          console.log('date', new Date(req._startTime) - new Date(ret.date))
-          if (new Date(req._startTime) - new Date(ret.date) < 900000) {
-            // 验证时间小于15min
-            userModel.update({ email: ret.email }, { status: 1}, function(updateErr, updateRet) {
-              if (updateErr) {
-                res.json({
-                    status: 0,
-                    success: false,
-                    message: '更新失败!',
-                    data:[]
-                })
-              }
-              console.log('注册成功')
-              // res.json({
-              //     status: 1,
-              //     success: true,
-              //     message: '注册成功!',
-              //     data:[]
-              // })
-              res.redirect('http://localhost:9000/WeUniv/login', 301);
-            })
-          }
-          else {
-            res.json({
-              status: 0,
-              success: false,
-              message: '验证超时,请重新注册！',
-              data:[]
+            // res.redirect('http://localhost:9000/WeUniv/login', 301);
           })
-          }
-        } 
+        }
         else {
+          // res.redirect('http://localhost:9000/WeUniv/error?errMsg=验证超时,请重新注册！', 301);
           res.json({
-              status: 0,
               success: false,
-              message: '验证码出错,请重新注册！',
-              data:[]
+              message: '验证超时,请重新注册！'
           })
         }
-      } 
+      }
       else {
-        // TODO:验证code和时间
-        
+        res.json({
+            success: false,
+            message: '验证码出错,请重新注册！'
+        })
       }
     })
   }
@@ -241,19 +210,17 @@ class User {
       if (err) return;
       if (ret) {
         if (ret && ret.status) {
-          // 存在已激活
+          // 存在且已激活
           res.json({
               success: false,
-              message: '该用户已注册！',
-              data:[]
+              message: '该用户已注册！'
           })
         }
         else {
           // 存在未激活
           res.json({
               success: false,
-              message: '该用户未激活邮箱！',
-              data:[]
+              message: '该用户未激活邮箱！'
           })
         }
       }

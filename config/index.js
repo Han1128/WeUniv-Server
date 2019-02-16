@@ -12,5 +12,12 @@ module.exports = {
       user: 'ChrisYu1128@163.com',
       pass: 'yzh446' //smtp密码
     }
+  },
+  qiniu: {
+    accessKey: 'aCbZAXsFXjSQ0L6hPhR5xTXDY5CtlSMoa6aFbV-1',
+    secretKey: 'hZL_VodWVCmPAWHJ8wyuE4XnGBWaG4pUaEv43tNm',
+    bucket: 'weuniv',
+    addr: 'pmwdq3oa6.bkt.clouddn.com',
+    publicBucketDomain: 'http://pmwdq3oa6.bkt.clouddn.com'
   }
 }

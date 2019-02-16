@@ -21,8 +21,8 @@ const userSchema = new Schema(
     gender : { 
       type: String // 1代表男性 0代表女性
     },
-    age : { 
-      type: Number 
+    birth : { 
+      type: Date 
     },
     email : { 
       type: String,
@@ -33,30 +33,30 @@ const userSchema = new Schema(
       type: Number,
       default: 0
     },
-    date: {
+    createTime: {
       type: Date
     },
     code: {
       type: String
-    }
-    // token: {
-    //   type: String
-    // },
-    // description: {
-    //   type: String,
-    //   default: '这个人很懒,什么都没留下'
-    // },
-    // article: [
-    //   { type: mongoose.Schema.Types.ObjectId, ref: 'article' }
-    // ]
+    },
+    token: {
+      type: String
+    },
+    userType: {
+      type: String
+    },
+    description: {
+      type: String,
+      default: '这个人很懒,什么都没留下'
+    },
+    article: [
+      { type: mongoose.Schema.Types.ObjectId, ref: 'article' }
+    ]
     // avatar: {
     //   type: String
     // },
     // bg_pic: {
     //   type: String
-    // },
-    // create_time: {
-    //   type: Date
     // },
     // following_user: [{
     //   type: mongoose.Schema.Types.ObjectId, 

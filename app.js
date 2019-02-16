@@ -1,9 +1,8 @@
 const express = require('express')
-const router = require('./routes/index')
+const routes = require('./routes')
 const morgan = require('morgan'); // 命令行log显示
 const bodyParser = require('body-parser') // 对post请求体进行解析
 const passport = require('passport');// 用户认证模块passport
-const Strategy = require('passport-http-bearer').Strategy;// token验证模块
 const app = express()
 
 // 使用静态资源
@@ -13,14 +12,11 @@ app.use('/public/', express.static('./public/'))
 app.use(passport.initialize());// 初始化passport模块
 app.use(morgan('dev'));// 命令行中显示程序运行日志,便于bug调试
 
-// 配置模板引擎和 body-parser 一定要在 app.use(router) 挂载路由之前
+// 配置模板引擎和 body-parser 一定要在 app.use(routes) 挂载路由之前
 app.use(bodyParser.urlencoded({ extended: false })) // parse application/x-www-form-urlencoded
 app.use(bodyParser.json()) // parse application/json
 
-app.use(router.get('/', (req, res) => {
-  console.log('/req', req)
-}))
-app.use('/api', router); // 为所有路由加上/api前缀
+routes(app);
 
 // //允许跨域
 app.all('*', (req, res, next) => {
