@@ -1,14 +1,18 @@
-const userModel = require('../../models/user/user');
+const mongoose = require('../../mongodb/db');
 const Bcrypt = require('../../utils/pwdbcrypt');
+const config = require('../../config/index');
+const fs = require('fs');
+// 引入model
+const userModel = require('../../models/user/user');
+const followModel = require('../../models/follow/follow');
+const schoolModel = require('../../models/user/schoolData');
+const messageModel = require('../../models/message/message');
+
+// 引入封装方法
 const Mailer = require('../../utils/mailtransport');
 const Token = require('../../middleware/token');
+const Qi = require('../../utils/qiniu');
 
-// 邮箱验证是否存在
-function mailValidate (mail) {
-  userModel.findOne({ email: mail }, function (err, doc) {
-    return doc ? true : false;
-  })
-}
 class User {
   /**
    * 用户登录
@@ -20,9 +24,8 @@ class User {
     userModel.find({ $or: [{ email: req.body.email }, { username: req.body.email }] }, function (err, ret) {
       if (err) {
         res.send({
-          type: 'error',
           message: '账号不存在',
-          status: 0
+          success: false
         })
       }
       else {
@@ -35,15 +38,13 @@ class User {
           userModel.update({ username: ret[0].username }, {$set: { token : token }}, function (err) {
             if (err) {
               res.send({
-                type: 'error',
                 message: '更新token出错',
-                status: 0
+                success: false
               })
             }
             res.send({
-              type: 'success',
               message: '登录成功',
-              status: 1,
+              success: true,
               data: {
                 userid: ret[0]._id,
                 username: ret[0].username,
@@ -55,10 +56,8 @@ class User {
         }
         else {
           res.send({
-            type: 'error',
             message: '密码出错',
-            status: 0,
-            data: []
+            success: false
           })
         }
       }
@@ -68,19 +67,15 @@ class User {
     userModel.findOne({ username: req.query.username }, function(err, ret) {
       if (err) {
         res.json({
-            status: 0,
             success: false,
-            message: '用户！',
-            data:[]
+            message: '用户！'
         })
       }
       // Token.validateToken(ret.token)
       console.log('token ', Token.checkToken(ret.token))
       res.send({
-        type: 'success',
         message: '验证成功',
-        status: 1,
-        data: []
+        success: true
       })
     })
   }
@@ -89,61 +84,28 @@ class User {
    * @param {Object} req 
    * @param {Object} res 
    */
-  userRegister (req, res) {
-    // 邮箱验证是否存在
-    if (!mailValidate(req.body.email)) {
-      // console.log('加盐结果', Bcrypt.genSalt(req.body.password));
-      const randomCode = Math.floor(Math.random()*10000000); // 生成六位随机码
-      const newUser = new userModel({
-        username: req.body.username,
-        userType: req.body.userType,
-        password: Bcrypt.genSalt(req.body.password),
-        gender: req.body.gender,
-        birth: req.body.birth,
-        email: req.body.email,
-        token: '',
-        status: 0,
-        createTime: new Date(),
-        code: randomCode
-      })
-      // node版本太低使用不了async和await
-      newUser.save(async function(err) {
-        if (err) {
-          res.json({
-              status:0,
-              success: false,
-              message:'添加失败',
-              data:[]
-          })
-        }
-        else {
-          if (await Mailer.sendMail(newUser.email, newUser.code) === 'success') {
-            console.log('邮件已发送,请完成邮箱验证')
-            res.json({
-                status: 1,
-                success: true,
-                message:'邮件已发送,请完成邮箱验证',
-                data:[]
-            })
-          }
-          else {
-            console.log('邮件发送出错,请稍后重试')
-            res.json({
-                status: 0,
-                success: false,
-                message:'邮件发送出错,请稍后重试',
-                data:[]
-            })
-          }
-        }
-      })
-    }
-    else {
+  async userRegister (req, res) {
+    try {
+      let randomCode = Math.floor(Math.random()*1000000); // 生成六位随机码
+      // 将randomCode保存在Session中
+      req.session.code = randomCode;
+      if (await Mailer.sendMail(req.body.email, randomCode) === 'success') {
+        res.json({
+            success: true,
+            message:'邮件已发送,请完成邮箱验证'
+        })
+      }
+      else {
+        res.json({
+            success: false,
+            message:'邮件发送出错,请稍后重试'
+        })
+      }
+    } catch (err) {
+      console.log('err', err)
       res.json({
-          status: 0,
           success: false,
-          message: '该邮箱已存在,请修改!',
-          data:[]
+          message:'邮件发送出错,请稍后重试'
       })
     }
   }
@@ -152,48 +114,101 @@ class User {
    * @param {Object} req 
    * @param {Object} res 
    */
-  checkMail(req, res) {
+  async checkMail(req, res) {
+    // 发送邮件
+    if (!req.session.code) {
+      res.json({
+          success: false,
+          message: '验证码超时,请重新发送邮箱验证'
+      })
+    }
+    if (req.session.code === Number(req.body.code)) {
+      const newObjectId = mongoose.Types.ObjectId();
+      const newUser = new userModel({
+        username: req.body.username,
+        email: req.body.email,
+        userType: req.body.userType,
+        password: Bcrypt.genSalt(req.body.password),
+        gender: req.body.gender,
+        birth: req.body.birth,
+        token: '',
+        status: 1,
+        follow: newObjectId,
+        schoolData: newObjectId,
+        hasTopArticle: false,
+        createTime: new Date()
+      })
+      await userModel.create(newUser);
+      const newFollow = new followModel({
+        _id: newObjectId,
+        author: newUser._id,
+        following_num: 0,
+        follower_num: 0
+      })
+      const newSchoolData = new followModel({
+        _id: newObjectId,
+        author: newUser._id
+      })
+      const newMessageData = new followModel({
+        _id: newObjectId,
+        author: newUser._id
+      })
+      await followModel.create(newFollow);
+      await schoolModel.create(newSchoolData);
+      await messageModel.create(newMessageData);
+      res.json({
+          success: true,
+          message: '用户添加成功'
+      })
+    }
+    else {
+      res.json({
+          success: false,
+          message: '验证码错误,请重新输入'
+      })
+    }
+    
     // console.log('startTime', req._startTime)
-    userModel.findOne({ email: req.body.account }, function(err, ret) {
-      if (err) {
-        res.json({
-            success: false,
-            message: '邮箱不存在！'
-        })
-      }
-      if (req.body.code === ret.code) {
-        console.log('验证码正确 date', new Date(req._startTime) - new Date(ret.createTime))
-        if (new Date(req._startTime) - new Date(ret.createTime) < 900000) {
-          // 验证时间小于15min
-          userModel.update({ email: ret.email }, { status: 1}, function(updateErr, updateRet) {
-            if (updateErr) {
-              res.json({
-                  success: false,
-                  message: '更新失败!'
-              })
-            }
-            res.json({
-                success: true,
-                message: '注册成功!'
-            })
-            // res.redirect('http://localhost:9000/WeUniv/login', 301);
-          })
-        }
-        else {
-          // res.redirect('http://localhost:9000/WeUniv/error?errMsg=验证超时,请重新注册！', 301);
-          res.json({
-              success: false,
-              message: '验证超时,请重新注册！'
-          })
-        }
-      }
-      else {
-        res.json({
-            success: false,
-            message: '验证码出错,请重新注册！'
-        })
-      }
-    })
+    // userModel.findOne({ email: req.body.account }, function(err, ret) {
+    //   if (err) {
+    //     res.json({
+    //         success: false,
+    //         message: '邮箱不存在！'
+    //     })
+    //   }
+    //   if (req.body.code === ret.code) {
+    //     console.log('验证码正确 date', new Date(req._startTime) - new Date(ret.createTime))
+    //     if (new Date(req._startTime) - new Date(ret.createTime) < 900000) {
+    //       // 验证时间小于15min
+    //       userModel.update({ email: ret.email }, { status: 1}, function(updateErr, updateRet) {
+    //         if (updateErr) {
+    //           res.json({
+    //               success: false,
+    //               message: '更新失败!'
+    //           })
+    //         }
+    //         res.json({
+    //             success: true,
+    //             message: '注册成功!'
+    //         })
+    //         // res.redirect('http://localhost:9000/WeUniv/login', 301);
+    //       })
+    //     }
+    //     else {
+    //       // res.redirect('http://localhost:9000/WeUniv/error?errMsg=验证超时,请重新注册！', 301);
+    //       res.json({
+    //           success: false,
+    //           message: '验证超时,请重新发送！'
+    //       })
+    //     }
+    //   }
+    //   else {
+    //     res.json({
+    //         success: false,
+    //         message: '验证码出错,请重新输入！'
+    //     })
+    //   }
+    // })
   }
   /**
    * 验证输入用户名或邮箱是否存在
@@ -227,11 +242,76 @@ class User {
       else {
         res.json({
             success: true,
-            message: '该用户未注册！',
-            data:[]
+            message: '该用户未注册！'
         })
       }
     })
+  }
+  // 获取用户信息
+  async getUserDetails(req, res) {
+    try {
+      // let result = await userModel.findOne({ _id: req.query.id}).populate('article').populate('follow')
+      let result = await userModel.findOne({ _id: req.query.id}).populate('follow')
+      res.send({
+        success: true,
+        message: '查询成功',
+        data: {
+          result: result
+        }
+      })
+    } catch (err) {
+      console.log('err', err)
+      res.send({
+        success: false,
+        message: '查询用户信息失败,请稍后重试'
+      })
+    }
+  }
+  
+  async uploadAvatar(req, res) {
+    try {
+      let formUploader = Qi.getFormLoader();
+      let uploadToken = Qi.getUploadToken();
+      let key = req.body.imgName + Date.parse(new Date()) + '.' + req.body.fileType;
+      let base64str = req.body.cropperImg.replace('data:image/png;base64,', '');
+      let buff = new Buffer(base64str, 'base64');
+      let filePath = __dirname + '/' + key;
+      await fs.writeFile(filePath, buff);
+      formUploader.putFile(uploadToken, key, filePath, Qi.putExtra, async function (respErr,
+        respBody, respInfo) {
+        if (respErr) {
+          console.log('失败', respErr)
+          throw respErr;
+        }
+        if (respInfo.statusCode == 200) {
+          fs.unlinkSync(filePath);
+          let updateResult = await userModel.findOneAndUpdate({ '_id' : req.body.userId }, {$set: {'avatar': 'http://' + config.qiniu.addr + '/' + respBody.key }})
+          if (updateResult) {
+            res.json({
+              success: true,
+              message:'上传成功',
+              data: {
+                url: 'http://' + config.qiniu.addr + '/' + respBody.key
+              }
+            })
+          }
+          else {
+            res.json({
+                success: false,
+                message:'上传成功但保持信息失败'
+            })
+          }
+        } else {
+          console.log('respErr', respInfo)
+          res.json({
+              success: false,
+              message:'上传失败'
+          })
+        }
+      })
+    } catch (error) {
+      console.log('error', error)
+    }
   }
 }
 

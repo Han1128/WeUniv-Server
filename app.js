@@ -3,20 +3,34 @@ const routes = require('./routes')
 const morgan = require('morgan'); // 命令行log显示
 const bodyParser = require('body-parser') // 对post请求体进行解析
 const passport = require('passport');// 用户认证模块passport
+let session = require('express-session');
+var cookieParser = require('cookie-parser');
 const app = express()
 
 // 使用静态资源
 app.use('/node_modules/', express.static('./node_modules/'))
 app.use('/public/', express.static('./public/'))
 
+// 配置session
+app.use(cookieParser('weuniv'));
+app.use(session({
+  secret: 'weuniv',
+  resave: true,
+  saveUninitialized: true,
+  cookie: {
+    maxAge: 60 * 1000  // 有效期，单位是毫秒
+  }
+}))
+
 app.use(passport.initialize());// 初始化passport模块
 app.use(morgan('dev'));// 命令行中显示程序运行日志,便于bug调试
 
 // 配置模板引擎和 body-parser 一定要在 app.use(routes) 挂载路由之前
-app.use(bodyParser.urlencoded({ extended: false })) // parse application/x-www-form-urlencoded
-app.use(bodyParser.json()) // parse application/json
+app.use(bodyParser.json({limit: '50mb'})) // parse application/json
+app.use(bodyParser.urlencoded({limit: '50mb', extended: true})) // parse application/x-www-form-urlencoded
 
 routes(app);
+
 
 // //允许跨域
 app.all('*', (req, res, next) => {

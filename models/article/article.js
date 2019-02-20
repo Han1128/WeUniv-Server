@@ -1,12 +1,10 @@
 const mongoose = require('../../mongodb/db');
-
 const Schema = mongoose.Schema;
 
 const articleSchema = new Schema(
   {
     title: {
-      type: String,
-      require: true // 不可为空
+      type: String
     },
     type: {
       type: String // long & short
@@ -24,21 +22,27 @@ const articleSchema = new Schema(
     public_time: {
       type: Date
     },
-    // article_bg: {
-    //   type: String
-    // },
+    coverBg: {
+      type: Array
+    },
+    viewsTime: {
+      type: Number
+    },
+    isTop: {
+      type: Boolean
+    },
     author: {
       type: mongoose.Schema.Types.ObjectId, ref: 'user' 
     },
-    // article_comment: {
-    //   type: mongoose.Schema.Types.ObjectId, ref: 'commont' 
-    // },
-    // article_like: {
-    //   type: mongoose.Schema.Types.ObjectId, ref: 'like' 
-    // },
-    // article_colllect: {
-    //   type: mongoose.Schema.Types.ObjectId, ref: 'colllect' 
-    // },
+    comment: [
+      { type: mongoose.Schema.Types.ObjectId, ref: 'comment' }
+    ],
+    likeBy: [
+      { type: mongoose.Schema.Types.ObjectId, ref: 'user' }
+    ],
+    colllectBy: [
+      { type: mongoose.Schema.Types.ObjectId, ref: 'user' }
+    ],
   },
   {
     versionKey:false
