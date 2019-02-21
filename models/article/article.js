@@ -40,7 +40,7 @@ const articleSchema = new Schema(
     likeBy: [
       { type: mongoose.Schema.Types.ObjectId, ref: 'user' }
     ],
-    colllectBy: [
+    collectBy: [
       { type: mongoose.Schema.Types.ObjectId, ref: 'user' }
     ],
   },

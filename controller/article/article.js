@@ -50,61 +50,6 @@ class Article {
           error
       })
     }
-
-
-    // formUploader.put(uploadToken, key, req.body.content, Qi.putExtra, function (respErr,
-    //   respBody, respInfo) {
-    //   if (respErr) {
-    //     res.json({
-    //       success: false,
-    //       message: '上传出错,请重试'
-    //   })
-    //   }
-    //   if (respInfo.statusCode == 200) {
-    //     // console.log('上传成功url', 'http://' + config.qiniu.addr + '/' + respBody.key)
-    //     // 创建文章对象
-    //     const newArticle = new articleModel({
-    //       title: req.body.title,
-    //       type: req.body.type,
-    //       content: 'http://' + config.qiniu.addr + '/' + respBody.key,
-    //       status: 0,
-    //       tag: 'public',
-    //       public_time: req.body.public_date,
-    //       author: req.body.userid,
-    //       coverBg: '',
-    //       viewsTime: req.body.viewsTime,
-    //       isTop: req.body.isTop,
-    //     })
-    //     newArticle.save(function(err) {
-    //       if (err) {
-    //         res.json({
-    //             success: false,
-    //             message:'添加失败'
-    //         })
-    //       }
-    //       else {
-    //         // 通过newArticle来拿到刚添加的_id
-    //         userModel.update({ _id: req.body.userid }, { $push: { article: newArticle._id } }, (err) => {
-    //           if (err) {
-    //             res.json({
-    //                 success: false,
-    //                 message:'用户信息更新失败'
-    //             })
-    //           }
-    //           res.json({
-    //               success: true,
-    //               message:'保存成功'
-    //           })
-    //         })
-    //       }
-    //     })
-    //   } else {
-    //     res.json({
-    //         success: false,
-    //         message:'上传失败'
-    //     })
-    //   }
-    // })
   }
   // 说说提交
   async addShortArticle(req, res, next) {
@@ -120,7 +65,6 @@ class Article {
           bgArr.push(bgUrl);
         }
       }
-      debugger
       const newArticle = new articleModel({
         title: '',
         type: 'short',
@@ -203,10 +147,25 @@ class Article {
   // 获取用户全部文章信息
   async getUserArticles(req, res, next) {
     try {
-      let result = await articleModel.find({ 'author': req.query.userid }).populate('author')
+      // 多层关联查询
+      let result = await articleModel.find({ 
+        'author': req.query.userid 
+      })
+      .populate('author')
+      .populate({
+        path: 'comment', // article中的关联名 不是关联文档的model名
+        model: 'comment', // model代表ref连接的文档名
+        populate: {
+          path: 'author',
+          model: 'user',
+          select: {
+            _id: 1, username: 1 // select内容中1表示要选取的部分 0代表不选取
+          }
+        }
+      })
       let turnResult = R.map(val => {
         let valObj = val.toObject();
-        let authorObj = R.pick(['_id', 'username', 'avatar'])(valObj.author);
+        let authorObj = R.pick(['_id', 'username', 'avatar', 'like', 'collect'])(valObj.author);
         authorObj._id = authorObj._id.toString();
         valObj.author = authorObj;
         return valObj
