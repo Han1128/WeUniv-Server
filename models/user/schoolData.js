@@ -1,15 +1,13 @@
 const mongoose = require('../../mongodb/db');
-
 const Schema = mongoose.Schema;
 /**
  * @param  {Number}   id       id
  * @param  {Function} callback 回调函数
  */
-const schoolDataSchema = new Schema(
+const schooldataSchema = new Schema(
   {
-    ID : {  // 学号/工号
+    schoolId: {  // 学号/工号
       type: String,
-      unique: true, // 不可重复
       default: ''
     },
     schoolName: { 
@@ -39,6 +37,6 @@ const schoolDataSchema = new Schema(
   }
 )
 
-const schoolData = mongoose.model('schoolData', schoolDataSchema);
+const schooldata = mongoose.model('schooldata', schooldataSchema);
 
-module.exports = schoolData;
+module.exports = schooldata;

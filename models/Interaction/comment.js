@@ -13,12 +13,16 @@ const commentSchema = new Schema(
     commentTime: {
       type: Date
     },
-    isEffect: {
+    isEffect: { // 是否有效
       type: Boolean
     },
-    commonent_from: { type: mongoose.Schema.Types.ObjectId, ref: 'comment' }, // 回复哪条评论
-    author: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }, // 谁评论的
-    article: { type: mongoose.Schema.Types.ObjectId, ref: 'article' } // 从哪个文章里面评论
+    isReply: { // 是否是回复
+      type: Boolean
+    },
+    likeBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'user' }], // 被谁点赞
+    from_comment: { type: mongoose.Schema.Types.ObjectId, ref: 'comment' }, // 回复哪条评论
+    from_author: { type: mongoose.Schema.Types.ObjectId, ref: 'user' }, // 谁评论的
+    from_article: { type: mongoose.Schema.Types.ObjectId, ref: 'article' } // 从哪个文章里面评论
   },
   {
     versionKey:false

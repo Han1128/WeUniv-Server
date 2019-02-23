@@ -6,5 +6,6 @@ router.post('/addArticleContent', articleController.addArticleContent); // 长�
 router.post('/addShortArticle', articleController.addShortArticle); // 短文添加
 router.get('/getUserArticles', articleController.getUserArticles);
 router.get('/getDesignArticle', articleController.getDesignArticle); // 获取特定文章 单个查询
+router.get('/getHomePageArticle', articleController.getHomePageArticle);
 
 module.exports = router

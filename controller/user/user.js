@@ -5,7 +5,8 @@ const fs = require('fs');
 // 引入model
 const userModel = require('../../models/user/user');
 const followModel = require('../../models/follow/follow');
-const schoolModel = require('../../models/user/schoolData');
+const schooldataModel = require('../../models/user/schoolData');
+const schoolModel = require('../../models/user/school');
 const messageModel = require('../../models/message/message');
 
 // 引入封装方法
@@ -84,7 +85,7 @@ class User {
    * @param {Object} req 
    * @param {Object} res 
    */
-  async userRegister (req, res) {
+  async sendEmail (req, res) {
     try {
       let randomCode = Math.floor(Math.random()*1000000); // 生成六位随机码
       // 将randomCode保存在Session中
@@ -92,6 +93,7 @@ class User {
       if (await Mailer.sendMail(req.body.email, randomCode) === 'success') {
         res.json({
             success: true,
+            cacheEmail: req.body.email,
             message:'邮件已发送,请完成邮箱验证'
         })
       }
@@ -123,43 +125,49 @@ class User {
       })
     }
     if (req.session.code === Number(req.body.code)) {
-      const newObjectId = mongoose.Types.ObjectId();
-      const newUser = new userModel({
-        username: req.body.username,
-        email: req.body.email,
-        userType: req.body.userType,
-        password: Bcrypt.genSalt(req.body.password),
-        gender: req.body.gender,
-        birth: req.body.birth,
-        token: '',
-        status: 1,
-        follow: newObjectId,
-        schoolData: newObjectId,
-        hasTopArticle: false,
-        createTime: new Date()
-      })
-      await userModel.create(newUser);
-      const newFollow = new followModel({
-        _id: newObjectId,
-        author: newUser._id,
-        following_num: 0,
-        follower_num: 0
-      })
-      const newSchoolData = new followModel({
-        _id: newObjectId,
-        author: newUser._id
-      })
-      const newMessageData = new followModel({
-        _id: newObjectId,
-        author: newUser._id
-      })
-      await followModel.create(newFollow);
-      await schoolModel.create(newSchoolData);
-      await messageModel.create(newMessageData);
-      res.json({
-          success: true,
-          message: '用户添加成功'
-      })
+      try {
+        const newObjectId = mongoose.Types.ObjectId();
+        const newUser = new userModel({
+          username: req.body.username,
+          email: req.body.email,
+          userType: req.body.userType,
+          password: Bcrypt.genSalt(req.body.password),
+          gender: req.body.gender,
+          birth: req.body.birth,
+          token: '',
+          status: 1,
+          follow: newObjectId,
+          schoolData: newObjectId,
+          hasTopArticle: false,
+          createTime: new Date()
+        })
+        await userModel.create(newUser);
+
+        const newSchoolData = new schoolModel({
+          _id: newObjectId,
+          author: newUser._id
+        })
+        await newSchoolData.save();
+        debugger
+        const newFollow = new followModel({
+          _id: newObjectId,
+          author: newUser._id,
+          following_num: 0,
+          follower_num: 0
+        })
+        await followModel.create(newFollow);
+        
+        res.json({
+            success: true,
+            message: '用户添加成功'
+        })
+      } catch (error) {
+        console.log('error', error)
+        res.json({
+            success: false,
+            message: '用户添加失败,请重试'
+        })
+      }
     }
     else {
       res.json({
@@ -167,48 +175,6 @@ class User {
           message: '验证码错误,请重新输入'
       })
     }
-    
-    // console.log('startTime', req._startTime)
-    // userModel.findOne({ email: req.body.account }, function(err, ret) {
-    //   if (err) {
-    //     res.json({
-    //         success: false,
-    //         message: '邮箱不存在！'
-    //     })
-    //   }
-    //   if (req.body.code === ret.code) {
-    //     console.log('验证码正确 date', new Date(req._startTime) - new Date(ret.createTime))
-    //     if (new Date(req._startTime) - new Date(ret.createTime) < 900000) {
-    //       // 验证时间小于15min
-    //       userModel.update({ email: ret.email }, { status: 1}, function(updateErr, updateRet) {
-    //         if (updateErr) {
-    //           res.json({
-    //               success: false,
-    //               message: '更新失败!'
-    //           })
-    //         }
-    //         res.json({
-    //             success: true,
-    //             message: '注册成功!'
-    //         })
-    //         // res.redirect('http://localhost:9000/WeUniv/login', 301);
-    //       })
-    //     }
-    //     else {
-    //       // res.redirect('http://localhost:9000/WeUniv/error?errMsg=验证超时,请重新注册！', 301);
-    //       res.json({
-    //           success: false,
-    //           message: '验证超时,请重新发送！'
-    //       })
-    //     }
-    //   }
-    //   else {
-    //     res.json({
-    //         success: false,
-    //         message: '验证码出错,请重新输入！'
-    //     })
-    //   }
-    // })
   }
   /**
    * 验证输入用户名或邮箱是否存在
@@ -251,7 +217,9 @@ class User {
   async getUserDetails(req, res) {
     try {
       // let result = await userModel.findOne({ _id: req.query.id}).populate('article').populate('follow')
-      let result = await userModel.findOne({ _id: req.query.id}).populate('follow')
+      let result = await userModel.findOne({ _id: req.query.id}, {
+        token: 0, status: 0, password: 0
+      }).populate('follow')
       res.send({
         success: true,
         message: '查询成功',

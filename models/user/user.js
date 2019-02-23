@@ -81,9 +81,13 @@ const userSchema = new Schema(
       // 一对多
       { type: mongoose.Schema.Types.ObjectId, ref: 'comment' }
     ],
-    like: [
+    like_article: [
       // 一对多
       { type: mongoose.Schema.Types.ObjectId, ref: 'article' }
+    ],
+    like_comment: [
+      // 一对多
+      { type: mongoose.Schema.Types.ObjectId, ref: 'comment' }
     ],
     collect: [
       // 一对多

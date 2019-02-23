@@ -34,7 +34,7 @@ const articleSchema = new Schema(
     author: {
       type: mongoose.Schema.Types.ObjectId, ref: 'user' 
     },
-    comment: [
+    commentFrom: [
       { type: mongoose.Schema.Types.ObjectId, ref: 'comment' }
     ],
     likeBy: [
