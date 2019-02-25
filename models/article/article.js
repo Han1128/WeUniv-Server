@@ -17,7 +17,7 @@ const articleSchema = new Schema(
       type: Number // -1 0 1
     },
     tag: {
-      type: String
+      type: Array
     },
     public_time: {
       type: Date

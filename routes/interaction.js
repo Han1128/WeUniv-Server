@@ -7,5 +7,9 @@ router.post('/addCollect', interActionController.addCollectToList);
 router.post('/addCommentLike', interActionController.addCommentLike);
 router.post('/postComment', interActionController.postComment);
 router.post('/postReplyComment', interActionController.postReplyComment);
+router.get('/getUserLike', interActionController.getUserLike);
+router.get('/getUserCollect', interActionController.getUserCollect);
+router.get('/getUserComment', interActionController.getUserComment);
+
 
 module.exports = router;

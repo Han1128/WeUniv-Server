@@ -25,7 +25,7 @@ class Article {
         type: req.body.type,
         content: articleUrl,
         status: 0,
-        tag: 'public',
+        tag: req.body.tags,
         public_time: req.body.public_date,
         author: req.body.userid,
         coverBg: coverBgArr,
