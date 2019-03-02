@@ -48,8 +48,8 @@ const userSchema = new Schema(
     bg_pic: {
       type: String
     },
-    hasTopArticle: { // 是否有置顶文章
-      type: Boolean
+    topArticle: { // 置顶文章Id
+      type: String
     },
     description: {
       type: String,

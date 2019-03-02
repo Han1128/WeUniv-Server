@@ -5,18 +5,18 @@ const messageModel = require('../../models/message/message');
 const mongoose = require('mongoose')
 
 class InterAction {
-  // 添加或取消点赞
+  // 文章添加或取消点赞
   async addLikeToList(req, res, next) {
     try {
       let isAdd = req.body.type === 'add'? true : false;
       if(isAdd) {
         // 添加点赞
-        await articleModel.update({ _id: req.body.articleId }, { $push: {'likeBy': req.body.userId }});
+        await articleModel.update({ _id: req.body.articleId }, { $push: {'likeBy': req.body.userId }, $inc: { 'like_num': 1 } });
         await userModel.update({ _id: req.body.userId }, { $push: {'like_article': req.body.articleId }});
       }
       else {
         // 取消点赞
-        await articleModel.update({ _id: req.body.articleId }, { $pull: {'likeBy': req.body.userId }});
+        await articleModel.update({ _id: req.body.articleId }, { $pull: {'likeBy': req.body.userId }, $inc: { 'like_num': -1 }});
         await userModel.update({ _id: req.body.userId }, { $pull: {'like_article': req.body.articleId }});
       }
       if (req.body.userId === req.body.authorId || !isAdd) {
@@ -57,12 +57,12 @@ class InterAction {
       let isAdd = req.body.type === 'add'? true : false;
       if(isAdd) {
         // 添加收藏
-        await articleModel.update({ _id: req.body.articleId }, { $push: {'collectBy': req.body.userId }});
+        await articleModel.update({ _id: req.body.articleId }, { $push: {'collectBy': req.body.userId }, $inc: { 'collect_num': 1 }});
         await userModel.update({ _id: req.body.userId }, { $push: {'collect': req.body.articleId }});
       }
       else {
         // 取消收藏
-        await articleModel.update({ _id: req.body.articleId }, { $pull: {'collectBy': req.body.userId }});
+        await articleModel.update({ _id: req.body.articleId }, { $pull: {'collectBy': req.body.userId }, $inc: { 'collect_num': -1 }});
         await userModel.update({ _id: req.body.userId }, { $pull: {'collect': req.body.articleId }});
       }
       if (req.body.userId === req.body.authorId || !isAdd) {
@@ -157,7 +157,7 @@ class InterAction {
       })
       await newComment.save();
       await userModel.update({'_id': req.body.userId}, { $push:{'comment': newComment._id }});
-      await articleModel.update({'_id': req.body.articleId}, { $push:{'commentFrom': newComment._id }});
+      await articleModel.update({'_id': req.body.articleId}, { $push:{'commentFrom': newComment._id }, $inc: { 'comment_num': 1 }});
       if (req.body.userId === req.body.authorId) {
         // 自己评价自己
         res.send({
@@ -171,6 +171,7 @@ class InterAction {
           messageType: 'comment',
           time: new Date,
           from_user: tranUserId, // 评论人
+          from_comment: newComment._id, // 评论内容
           from_article: tranArticleId // 被评论文章
         })
         await newMessage.save();
@@ -204,7 +205,7 @@ class InterAction {
       })
       await newComment.save();
       await userModel.update({'_id': req.body.userId}, { $push:{'comment': newComment._id }});
-      await articleModel.update({'_id': req.body.articleId}, { $push:{'commentFrom': newComment._id }});
+      await articleModel.update({'_id': req.body.articleId}, { $push:{'commentFrom': newComment._id }, $inc: { 'comment_num': 1 }});
       if (req.body.comment_author === req.body.userId) {
         res.send({
           success: true,
@@ -408,6 +409,72 @@ class InterAction {
       res.send({
         success: false,
         message: '获取用户评论失败'
+      })
+    }
+  }
+  // 关注页获取用户收藏/点赞文章列表 通过article文档查找跟上面不同
+  async getLikeArticle (req, res, next) {
+    try {
+      let result = await articleModel.find({
+        '_id': {
+          $in: req.query.likeList
+        }
+      }).populate({
+        path: 'author',
+        model: 'user',
+        select: {
+          _id: 1,
+          username: 1,
+          avatar: 1,
+          like_article: 1,
+          like_comment: 1,
+          collect: 1
+        }
+      }).populate({
+        path: 'commentFrom', // article中的关联名 不是关联文档的model名
+        model: 'comment', // model代表ref连接的文档名
+        populate: {
+          path: 'from_author',
+          model: 'user',
+          select: { // select内容中1表示要选取的部分 0代表不选取
+            _id: 1, 
+            username: 1,
+            avatar: 1,
+            like_article: 1,
+            like_comment: 1
+          }
+        }
+      }).populate({
+        path: 'commentFrom', // article中的关联名 不是关联文档的model名
+        model: 'comment', // model代表ref连接的文档名
+        populate: {
+          path: 'from_comment',
+          model: 'comment',
+          populate: {
+            path: 'from_author',
+            model: 'user',
+            select: { // select内容中1表示要选取的部分 0代表不选取
+              _id: 1, 
+              username: 1,
+              avatar: 1,
+              like_article: 1,
+              like_comment: 1
+            }
+          }
+        }
+      }).sort({'public_time': -1});
+      res.send({
+        success: true,
+        message: '文章查询成功',
+        data: {
+          result
+        }
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.send({
+        success: false,
+        message: '文章查询失败,请稍后重试'
       })
     }
   }

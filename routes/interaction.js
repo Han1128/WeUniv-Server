@@ -10,6 +10,6 @@ router.post('/postReplyComment', interActionController.postReplyComment);
 router.get('/getUserLike', interActionController.getUserLike);
 router.get('/getUserCollect', interActionController.getUserCollect);
 router.get('/getUserComment', interActionController.getUserComment);
-
+router.get('/getLikeArticle', interActionController.getLikeArticle); // 获取用户点赞和评论文章列表
 
 module.exports = router;

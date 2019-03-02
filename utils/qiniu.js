@@ -30,6 +30,12 @@ class Qiniu {
     qiniuconfig.zone = qiniu.zone.Zone_z2; // 空间对应的机房
     return new qiniu.form_up.FormUploader(qiniuconfig);
   }
+  getBucketManager () {
+    let mac = new qiniu.auth.digest.Mac(this.ak, this.sk);
+    let qinniuConfig = new qiniu.conf.Config();
+    qinniuConfig.zone = qiniu.zone.Zone_z2;
+    return new qiniu.rs.BucketManager(mac, qinniuConfig);
+  }
   uploadReTry(key, content) {
     let formUploader = this.getFormLoader();
     let putExtra =new qiniu.form_up.PutExtra(); // 如果两个文件同时上传调用这个函数必须保证putExtra不一样
@@ -45,22 +51,37 @@ class Qiniu {
       })
     })
   }
-  // uploadReTry(key, filePath) {
-  //   let formUploader = this.getFormLoader();
-  //   let putExtra =new qiniu.form_up.PutExtra();
-  //   return new Promise((resolve, reject) => {
-  //     formUploader.putFile(this.getUploadToken(), key, filePath, putExtra, function (respErr,
-  //       respBody, respInfo) {
-  //       if (respErr) reject(respErr);
-  //       if (respInfo.statusCode == 200) {
-  //         fs.unlinkSync(filePath);
-  //         resolve('http://' + config.qiniu.addr + '/' + encodeURI(respBody.key))
-  //       } else {
-  //       reject(respInfo)
-  //       }
-  //     })
-  //   })
-  // }
+  // 删除资源
+  deleteFromQiniu(key) {
+    let bucketManager = this.getBucketManager();
+    return new Promise((resolve, reject) => {
+      bucketManager.delete(config.qiniu.bucket, key, function(err, respBody, respInfo) {
+        if (err) reject(err)
+        if (respInfo.statusCode == 200) {
+          resolve(respInfo);
+        } else {
+          reject(respBody);
+        }
+      });
+    })
+  }
+  // 以文件形式将资源上传
+  putFileToQiniu(key, filePath) {
+    let formUploader = this.getFormLoader();
+    let putExtra =new qiniu.form_up.PutExtra();
+    return new Promise((resolve, reject) => {
+      formUploader.putFile(this.getUploadToken(), key, filePath, putExtra, function (respErr,
+        respBody, respInfo) {
+        if (respErr) reject(respErr);
+        if (respInfo.statusCode == 200) {
+          fs.unlinkSync(filePath);
+          resolve(respBody);
+        } else {
+          reject(respInfo);
+        }
+      })
+    })
+  }
 }
 
 module.exports = new Qiniu(config.qiniu.accessKey, config.qiniu.secretKey);

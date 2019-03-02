@@ -6,5 +6,7 @@ router.post('/addFllowShip', followController.addFllowShip);
 router.post('/removeFollowShip', followController.removeFollowShip);
 router.get('/getFollowingList', followController.getFollowingList);
 router.get('/getFollowerList', followController.getFollowerList);
+router.get('/getCommonFollow', followController.getCommonFollow);
+router.get('/getFollowArticle', followController.getFollowArticle);
 
 module.exports = router;

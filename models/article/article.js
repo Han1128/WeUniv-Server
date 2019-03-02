@@ -9,9 +9,12 @@ const articleSchema = new Schema(
     type: {
       type: String // long & short
     },
-    content: {
+    content: { // 保存html结构
       type: String,
       require: true // 不可为空
+    },
+    text: { // 纯文本内容
+      type: String
     },
     status: {
       type: Number // -1 0 1
@@ -20,6 +23,9 @@ const articleSchema = new Schema(
       type: Array
     },
     public_time: {
+      type: Date
+    },
+    update_time: {
       type: Date
     },
     coverBg: {
@@ -33,6 +39,18 @@ const articleSchema = new Schema(
     },
     author: {
       type: mongoose.Schema.Types.ObjectId, ref: 'user' 
+    },
+    comment_num: {
+      type: Number,
+      default: 0
+    },
+    like_num: {
+      type: Number,
+      default: 0
+    },
+    collect_num: {
+      type: Number,
+      default: 0
     },
     commentFrom: [
       { type: mongoose.Schema.Types.ObjectId, ref: 'comment' }

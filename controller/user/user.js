@@ -5,6 +5,7 @@ const fs = require('fs');
 // 引入model
 const userModel = require('../../models/user/user');
 const followModel = require('../../models/follow/follow');
+const tagModel = require('../../models/tag/tag');
 const schooldataModel = require('../../models/user/schoolData');
 const schoolModel = require('../../models/user/school');
 const messageModel = require('../../models/message/message');
@@ -138,7 +139,7 @@ class User {
           status: 1,
           follow: newObjectId,
           schoolData: newObjectId,
-          hasTopArticle: false,
+          topArticle: '',
           createTime: new Date()
         })
         await userModel.create(newUser);
@@ -219,7 +220,7 @@ class User {
       // let result = await userModel.findOne({ _id: req.query.id}).populate('article').populate('follow')
       let result = await userModel.findOne({ _id: req.query.id}, {
         token: 0, status: 0, password: 0
-      }).populate('follow')
+      }).populate('follow');
       res.send({
         success: true,
         message: '查询成功',
@@ -228,55 +229,88 @@ class User {
         }
       })
     } catch (err) {
-      console.log('err', err)
       res.send({
         success: false,
         message: '查询用户信息失败,请稍后重试'
       })
     }
   }
-  
+  // async uploadAvatar(req, res) {
+  //   try {
+  //     let formUploader = Qi.getFormLoader();
+  //     let uploadToken = Qi.getUploadToken();
+  //     let key = req.body.imgName + Date.parse(new Date()) + '.' + req.body.fileType;
+  //     let base64str = req.body.cropperImg.replace('data:image/png;base64,', '');
+  //     let buff = new Buffer(base64str, 'base64');
+  //     let filePath = __dirname + '/' + key;
+  //     await fs.writeFile(filePath, buff);
+  //     formUploader.putFile(uploadToken, key, filePath, Qi.putExtra, async function (respErr,
+  //       respBody, respInfo) {
+  //       if (respErr) {
+  //         console.log('失败', respErr)
+  //         throw respErr;
+  //       }
+  //       if (respInfo.statusCode == 200) {
+  //         fs.unlinkSync(filePath);
+  //         let updateResult = await userModel.findOneAndUpdate({ '_id' : req.body.userId }, {$set: {'avatar': 'http://' + config.qiniu.addr + '/' + respBody.key }})
+  //         if (updateResult) {
+  //           res.json({
+  //             success: true,
+  //             message:'上传成功',
+  //             data: {
+  //               url: 'http://' + config.qiniu.addr + '/' + respBody.key
+  //             }
+  //           })
+  //         }
+  //         else {
+  //           res.json({
+  //               success: false,
+  //               message:'上传成功但保持信息失败'
+  //           })
+  //         }
+  //       } else {
+  //         console.log('respErr', respInfo)
+  //         res.json({
+  //             success: false,
+  //             message:'上传失败'
+  //         })
+  //       }
+  //     })
+  //   } catch (error) {
+  //     console.log('error', error)
+  //   }
+  // }
+
   async uploadAvatar(req, res) {
     try {
-      let formUploader = Qi.getFormLoader();
-      let uploadToken = Qi.getUploadToken();
-      let key = req.body.imgName + Date.parse(new Date()) + '.' + req.body.fileType;
+      if (req.body.oldAvatar) {
+        // 先删除旧图
+        let splitArr = req.body.oldAvatar.split('/');
+        let key = splitArr[splitArr.length - 1];
+        await Qi.deleteFromQiniu(key);
+      }
+      let key = req.body.imgName + Date.parse(new Date()) + '.png';
       let base64str = req.body.cropperImg.replace('data:image/png;base64,', '');
       let buff = new Buffer(base64str, 'base64');
       let filePath = __dirname + '/' + key;
       await fs.writeFile(filePath, buff);
-      formUploader.putFile(uploadToken, key, filePath, Qi.putExtra, async function (respErr,
-        respBody, respInfo) {
-        if (respErr) {
-          console.log('失败', respErr)
-          throw respErr;
-        }
-        if (respInfo.statusCode == 200) {
-          fs.unlinkSync(filePath);
-          let updateResult = await userModel.findOneAndUpdate({ '_id' : req.body.userId }, {$set: {'avatar': 'http://' + config.qiniu.addr + '/' + respBody.key }})
-          if (updateResult) {
-            res.json({
-              success: true,
-              message:'上传成功',
-              data: {
-                url: 'http://' + config.qiniu.addr + '/' + respBody.key
-              }
-            })
+      let respBody = await Qi.putFileToQiniu(key, filePath);
+      let updateResult = await userModel.findOneAndUpdate({ '_id' : req.body.userId }, {$set: {'avatar': 'http://' + config.qiniu.addr + '/' + respBody.key }})
+      if (updateResult) {
+        res.json({
+          success: true,
+          message:'上传成功',
+          data: {
+            url: 'http://' + config.qiniu.addr + '/' + respBody.key
           }
-          else {
-            res.json({
-                success: false,
-                message:'上传成功但保持信息失败'
-            })
-          }
-        } else {
-          console.log('respErr', respInfo)
-          res.json({
-              success: false,
-              message:'上传失败'
-          })
-        }
-      })
+        })
+      }
+      else {
+        res.json({
+            success: false,
+            message:'上传成功但保持信息失败'
+        })
+      }
     } catch (error) {
       console.log('error', error)
     }

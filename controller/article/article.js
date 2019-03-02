@@ -13,7 +13,7 @@ class Article {
       let articleUrl = await Qi.uploadReTry(articleKey, req.body.content);
       let bgUrl = '';
       if (req.body.coverBg !== '') {
-        let bgKey = req.body.title + Date.parse(req.body.public_date) + 'bg.' + req.body.bgType;
+        let bgKey = req.body.title + Date.parse(req.body.public_date) + 'bg.png';
         let base64str = req.body.coverBg.replace('data:image/png;base64,', '');
         let buff = new Buffer(base64str, 'base64');
         bgUrl = await Qi.uploadReTry(bgKey, buff);
@@ -24,16 +24,36 @@ class Article {
         title: req.body.title,
         type: req.body.type,
         content: articleUrl,
+        text: req.body.text,
         status: 0,
         tag: req.body.tags,
         public_time: req.body.public_date,
-        author: req.body.userid,
+        author: req.body.userId,
         coverBg: coverBgArr,
         viewsTime: req.body.viewsTime,
         isTop: req.body.isTop,
       })
       await newArticle.save();
-      await userModel.update({ _id: req.body.userid }, { $push: { article: newArticle._id } });
+      if (req.body.isTop) {
+        // 设置置顶
+        if (req.body.topId) {
+          // 如果已经有置顶文章 将置顶文章setTop设置为false
+          await articleModel.update({ 
+            _id: req.body.topId 
+          }, { 
+            'isTop': false
+          });
+        }
+        await userModel.update({ 
+          _id: req.body.userId 
+        }, { 
+          $push: { article: newArticle._id }, 
+          'topArticle': newArticle._id
+        });
+      }
+      else {
+        await userModel.update({ _id: req.body.userId }, { $push: { article: newArticle._id } });
+      }
       res.json({
           success: true,
           message:'保存成功',
@@ -47,6 +67,125 @@ class Article {
           success: false,
           message:'用户信息更新失败',
           error
+      })
+    }
+  }
+  // 文章编辑
+  async articleEdit(req, res, next) {
+    try {
+      // 先删除原有内容
+      const oldResult = await articleModel.findOne({'_id': req.body.articleId});
+      //先删文章
+      let contentArr = oldResult.content.split('/');
+      let contentKey = contentArr[contentArr.length - 1];
+      contentKey = decodeURI(contentKey);
+      await Qi.deleteFromQiniu(contentKey);
+      if (oldResult.coverBg[0]) {
+        // 再删除旧图
+        let bgArr = oldResult.coverBg[0].split('/');
+        let bgKey = bgArr[bgArr.length - 1];
+        bgKey = decodeURI(bgKey);
+        await Qi.deleteFromQiniu(bgKey);
+      }
+      let articleKey = req.body.title + Date.parse(req.body.update_time) + '.html'; // 生成独一无二的文件名 最好还是用时间戳来保存
+      let articleUrl = await Qi.uploadReTry(articleKey, req.body.content);
+      let bgUrl = '';
+      if (req.body.coverBg !== '') {
+        let bgKey = req.body.title + Date.parse(req.body.update_time) + 'bg.png';
+        let base64str = req.body.coverBg.replace('data:image/png;base64,', '');
+        let buff = new Buffer(base64str, 'base64');
+        bgUrl = await Qi.uploadReTry(bgKey, buff);
+      }
+      let coverBgArr = [];
+      coverBgArr.push(bgUrl);
+      // 一次更新多条
+      await articleModel.update({
+        '_id': req.body.articleId
+      },{$set: {
+        'title': req.body.title, 
+        'content': articleUrl, 
+        'text': req.body.text,
+        'tag': req.body.tags, 
+        'update_time': req.body.update_time,
+        'coverBg': coverBgArr,
+        'viewsTime': 1,
+        'isTop': req.body.isTop
+      }});
+      if (req.body.isTop) {
+        // 设置置顶
+        if (req.body.topId) {
+          // 如果已经有置顶文章 将置顶文章setTop设置为false
+          await articleModel.update({ 
+            _id: req.body.topId 
+          }, { 
+            'isTop': false
+          });
+        }
+        await userModel.update({ 
+          _id: req.body.userId 
+        }, { 
+          'topArticle': req.body.articleId
+        });
+      }
+      else if (req.body.topId == req.body.articleId) {
+        // 置顶文章设置为不置顶
+        await userModel.update({ 
+          _id: req.body.userId 
+        }, { 
+          'topArticle': ''
+        });
+      }
+      res.json({
+          success: true,
+          message:'更新成功',
+          data: {
+            articleid: req.body.articleId
+          }
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'文章信息更新失败'
+      })
+    }
+  }
+  async articleDelete(req, res) {
+    try {
+      // 查询删除文章和背景
+      const result = await articleModel.findOne({
+        '_id': req.body.articleId
+      });
+      // 删除七牛云资源
+      let contentArr = result.content.split('/');
+      let contentKey = contentArr[contentArr.length - 1];
+      contentKey = decodeURI(contentKey);
+      await Qi.deleteFromQiniu(contentKey);
+      if (result.coverBg[0]) {
+        let bgArr = result.coverBg[0].split('/');
+        let bgKey = bgArr[bgArr.length - 1];
+        bgKey = decodeURI(bgKey);
+        await Qi.deleteFromQiniu(bgKey);
+      }
+      // 删除用户表的数据
+      await userModel.update({
+        _id: result.author 
+      }, { 
+        $pull: {
+          'article': result._id
+        }
+      });
+      // 删除文章
+      await articleModel.remove({'_id': result._id});
+      res.json({
+          success: true,
+          message:'删除成功'
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'文章删除失败'
       })
     }
   }
@@ -77,7 +216,26 @@ class Article {
         isTop: req.body.isTop,
       })
       await newArticle.save(); // 保存文章
-      await userModel.update({ _id: req.body.userId }, { $push: { article: newArticle._id } });
+      if (req.body.isTop) {
+        // 设置置顶
+        if (req.body.topId) {
+          // 如果已经有置顶文章 将置顶文章setTop设置为false
+          await articleModel.update({ 
+            _id: req.body.topId 
+          }, { 
+            'isTop': false
+          });
+        }
+        await userModel.update({ 
+          _id: req.body.userId 
+        }, { 
+          $push: { article: newArticle._id }, 
+          'topArticle': newArticle._id
+        });
+      }
+      else {
+        await userModel.update({ _id: req.body.userId }, { $push: { article: newArticle._id } });
+      }
       res.json({
         success: true,
         message:'文章提交成功'
@@ -320,6 +478,162 @@ class Article {
       })
     }
   }
+  async getArticleByTag (req, res, next) {
+    try {
+      let result = await articleModel.find({ 
+        "$or": [{
+          'title': new RegExp(req.query.tagLabel, "i")
+        }, {
+          'text': new RegExp(req.query.tagLabel, "i")
+        }, {
+          'tag': new RegExp(req.query.tagLabel, "i")
+        }]
+        // 查询评论数大于1的文章
+      }).populate({
+        path: 'author',
+        model: 'user',
+        select: {
+          _id: 1,
+          username: 1,
+          avatar: 1,
+          like_article: 1,
+          like_comment: 1,
+          collect: 1
+        }
+      }).populate({
+        path: 'commentFrom', // article中的关联名 不是关联文档的model名
+        model: 'comment', // model代表ref连接的文档名
+        populate: {
+          path: 'from_author',
+          model: 'user',
+          select: { // select内容中1表示要选取的部分 0代表不选取
+            _id: 1, 
+            username: 1,
+            avatar: 1,
+            like_article: 1,
+            like_comment: 1
+          }
+        }
+      }).populate({
+        path: 'commentFrom', // article中的关联名 不是关联文档的model名
+        model: 'comment', // model代表ref连接的文档名
+        populate: {
+          path: 'from_comment',
+          model: 'comment',
+          populate: {
+            path: 'from_author',
+            model: 'user',
+            select: { // select内容中1表示要选取的部分 0代表不选取
+              _id: 1, 
+              username: 1,
+              avatar: 1,
+              like_article: 1,
+              like_comment: 1
+            }
+          }
+        }
+      }).sort({'public_time': -1});
+      res.send({
+        success: true,
+        message: '文章查询成功',
+        data: {
+          result
+        }
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.send({
+        success: false,
+        message: '文章查询失败,请稍后重试'
+      })
+    }
+  }
+  // 根据日期间隔查询内容返回
+  async getNewestArticle(req, res, next) {
+    try {
+      // 多层关联查询
+      let result = await articleModel.find({ "public_time" : { 
+        "$gte" : new Date(req.query.time).toISOString()
+      } }).populate({
+        path: 'author',
+        model: 'user',
+        select: {
+          _id: 1,
+          username: 1,
+          avatar: 1,
+          like_article: 1,
+          like_comment: 1,
+          collect: 1
+        }
+      }).populate({
+        path: 'commentFrom', // article中的关联名 不是关联文档的model名
+        model: 'comment', // model代表ref连接的文档名
+        populate: {
+          path: 'from_author',
+          model: 'user',
+          select: { // select内容中1表示要选取的部分 0代表不选取
+            _id: 1, 
+            username: 1,
+            avatar: 1,
+            like_article: 1,
+            like_comment: 1
+          }
+        }
+      }).populate({
+        path: 'commentFrom', // article中的关联名 不是关联文档的model名
+        model: 'comment', // model代表ref连接的文档名
+        populate: {
+          path: 'from_comment',
+          model: 'comment',
+          populate: {
+            path: 'from_author',
+            model: 'user',
+            select: { // select内容中1表示要选取的部分 0代表不选取
+              _id: 1, 
+              username: 1,
+              avatar: 1,
+              like_article: 1,
+              like_comment: 1
+            }
+          }
+        }
+      }).sort({'like_num': -1, 'collect_num': -1});
+      res.send({
+        success: true,
+        message: '文章查询成功',
+        data: {
+          result
+        }
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.send({
+        success: false,
+        message: '文章查询失败,请稍后重试'
+      })
+    }
+  }
+  async updateNum (req, res, next) {
+    try {
+      let result =await articleModel.findOne({'_id': req.body.articleId})
+      await articleModel.update({'_id': req.body.articleId}, {
+        "comment_num": result.commentFrom.length,
+        "like_num": result.likeBy.length,
+        "collect_num": result.collectBy.length
+      })
+      res.send({
+        success: true,
+        message: '更新成功'
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.send({
+        success: false,
+        message: '文章查询失败,请稍后重试'
+      })
+    }
+  }
+  
 }
 
 module.exports = new Article();
