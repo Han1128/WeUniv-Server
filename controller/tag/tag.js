@@ -7,7 +7,6 @@ class Tag {
   // 添加标签
   async addFollowTag(req, res, next) {
     try {
-      debugger
       await tagModel.update({ 'iconLabel': req.body.label }, { 
         $push: { 'follower': req.body.userId },
         $inc: { 'follower_num': 1 }

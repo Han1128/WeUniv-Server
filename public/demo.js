@@ -81,4 +81,24 @@ class demo {
       })
     }
   }
+  async updateNum (req, res, next) {
+    try {
+      let result =await articleModel.findOne({'_id': req.body.articleId})
+      await articleModel.update({'_id': req.body.articleId}, {
+        "comment_num": result.commentFrom.length,
+        "like_num": result.likeBy.length,
+        "collect_num": result.collectBy.length
+      })
+      res.send({
+        success: true,
+        message: '更新成功'
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.send({
+        success: false,
+        message: '文章查询失败,请稍后重试'
+      })
+    }
+  }
 }

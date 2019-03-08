@@ -11,7 +11,7 @@ router.get('/getDesignArticle', articleController.getDesignArticle); // 获取�
 router.get('/getHomePageArticle', articleController.getHomePageArticle); // 首页热门文章
 router.get('/getArticleByTag', articleController.getArticleByTag); // 通过标签筛选文章
 router.get('/getNewestArticle', articleController.getNewestArticle); // 通过时间间隔筛选文章
-
-router.post('/updateNum', articleController.updateNum); // 通过时间间隔筛选文章
+router.get('/getHomeNewestArticle', articleController.getHomeNewestArticle); // 通过时间间隔筛选文章
+router.get('/getUserGallery', articleController.getUserGallery);
 
 module.exports = router

@@ -9,5 +9,6 @@ router.post('/checkUserExist', userController.checkUserExist);
 router.post('/uploadAvatar', userController.uploadAvatar);
 router.get('/checkToken', userController.checkToken);
 router.get('/getUserDetails', userController.getUserDetails);
+router.get('/getUserDetails', userController.getUserDetails);
 
 module.exports = router

@@ -29,6 +29,9 @@ app.use(morgan('dev'));// 命令行中显示程序运行日志,便于bug调试
 app.use(bodyParser.json({limit: '50mb'})) // parse application/json
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true})) // parse application/x-www-form-urlencoded
 
+app.get('/', function (req, res) {
+  res.send('GET request to the homepage');
+});
 routes(app);
 
 

@@ -1,4 +1,5 @@
 const userModel = require('../../models/user/user');
+const messageModel = require('../../models/message/message');
 
 class Message {
   async getCollectMsg (req, res, next) {
@@ -248,6 +249,47 @@ class Message {
         success: false,
         message: '获取评论内容失败'
       });
+    }
+  }
+  async getMessageCount (req, res, next) {
+    try {
+      let result = await userModel.findOne({
+        '_id': req.query.userId
+      });
+      debugger
+      let likeCount = await messageModel.find({
+        _id: {
+          $in: result.message
+        },
+        messageType: 'like',
+      }).count();
+      let collectCount = await messageModel.find({
+        _id: {
+          $in: result.message
+        },
+        messageType: 'collect'
+      }).count();
+      let commentCount = await messageModel.find({
+        _id: {
+          $in: result.message
+        },
+        messageType: 'comment'
+      }).count();
+      res.send({
+        success: true,
+        message: '查询成功',
+        data: {
+          likeCount,
+          collectCount,
+          commentCount
+        }
+      })
+    } catch (error) {
+      console.log('reeor', error);
+      res.send({
+        success: false,
+        message: '查询数量失败'
+      })
     }
   }
 }

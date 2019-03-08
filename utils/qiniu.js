@@ -19,7 +19,7 @@ class Qiniu {
       scope: config.qiniu.bucket,
       force: true, // 强制替换同名文件
       expires: 7200, // 超时两小时
-      fsizeMin: 1 // 最小限制
+      fsizeMin: 1 // 最小限制,单位为B
     }
     let putPolicy = new qiniu.rs.PutPolicy(options);
     // 获取并返回uploadtoken
@@ -36,6 +36,7 @@ class Qiniu {
     qinniuConfig.zone = qiniu.zone.Zone_z2;
     return new qiniu.rs.BucketManager(mac, qinniuConfig);
   }
+  // 上传资源
   uploadReTry(key, content) {
     let formUploader = this.getFormLoader();
     let putExtra =new qiniu.form_up.PutExtra(); // 如果两个文件同时上传调用这个函数必须保证putExtra不一样
@@ -72,9 +73,9 @@ class Qiniu {
     return new Promise((resolve, reject) => {
       formUploader.putFile(this.getUploadToken(), key, filePath, putExtra, function (respErr,
         respBody, respInfo) {
+        fs.unlinkSync(filePath);
         if (respErr) reject(respErr);
         if (respInfo.statusCode == 200) {
-          fs.unlinkSync(filePath);
           resolve(respBody);
         } else {
           reject(respInfo);

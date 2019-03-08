@@ -4,11 +4,9 @@ const config = require('../../config/index');
 const fs = require('fs');
 // 引入model
 const userModel = require('../../models/user/user');
+const articleModel = require('../../models/article/article');
 const followModel = require('../../models/follow/follow');
-const tagModel = require('../../models/tag/tag');
-const schooldataModel = require('../../models/user/schoolData');
 const schoolModel = require('../../models/user/school');
-const messageModel = require('../../models/message/message');
 
 // 引入封装方法
 const Mailer = require('../../utils/mailtransport');
@@ -149,7 +147,6 @@ class User {
           author: newUser._id
         })
         await newSchoolData.save();
-        debugger
         const newFollow = new followModel({
           _id: newObjectId,
           author: newUser._id,
@@ -217,7 +214,6 @@ class User {
   // 获取用户信息
   async getUserDetails(req, res) {
     try {
-      // let result = await userModel.findOne({ _id: req.query.id}).populate('article').populate('follow')
       let result = await userModel.findOne({ _id: req.query.id}, {
         token: 0, status: 0, password: 0
       }).populate('follow');
@@ -235,66 +231,25 @@ class User {
       })
     }
   }
-  // async uploadAvatar(req, res) {
-  //   try {
-  //     let formUploader = Qi.getFormLoader();
-  //     let uploadToken = Qi.getUploadToken();
-  //     let key = req.body.imgName + Date.parse(new Date()) + '.' + req.body.fileType;
-  //     let base64str = req.body.cropperImg.replace('data:image/png;base64,', '');
-  //     let buff = new Buffer(base64str, 'base64');
-  //     let filePath = __dirname + '/' + key;
-  //     await fs.writeFile(filePath, buff);
-  //     formUploader.putFile(uploadToken, key, filePath, Qi.putExtra, async function (respErr,
-  //       respBody, respInfo) {
-  //       if (respErr) {
-  //         console.log('失败', respErr)
-  //         throw respErr;
-  //       }
-  //       if (respInfo.statusCode == 200) {
-  //         fs.unlinkSync(filePath);
-  //         let updateResult = await userModel.findOneAndUpdate({ '_id' : req.body.userId }, {$set: {'avatar': 'http://' + config.qiniu.addr + '/' + respBody.key }})
-  //         if (updateResult) {
-  //           res.json({
-  //             success: true,
-  //             message:'上传成功',
-  //             data: {
-  //               url: 'http://' + config.qiniu.addr + '/' + respBody.key
-  //             }
-  //           })
-  //         }
-  //         else {
-  //           res.json({
-  //               success: false,
-  //               message:'上传成功但保持信息失败'
-  //           })
-  //         }
-  //       } else {
-  //         console.log('respErr', respInfo)
-  //         res.json({
-  //             success: false,
-  //             message:'上传失败'
-  //         })
-  //       }
-  //     })
-  //   } catch (error) {
-  //     console.log('error', error)
-  //   }
-  // }
-
+  // 头像上传
   async uploadAvatar(req, res) {
     try {
+      // 先上传再删图
+      let key = req.body.imgName + Date.parse(new Date()) + '.png';
+      let base64str = req.body.cropperImg.replace('data:image/png;base64,', '');
+      let filePath = __dirname + '/' + key;
+      await fs.writeFile(filePath, base64str, 'base64')
+      // let buff = new Buffer(base64str, 'base64');
+      // await fs.writeFile(filePath, buff); // 这种方式的buff可能转换出错
+      let respBody = await Qi.putFileToQiniu(key, filePath);
+
       if (req.body.oldAvatar) {
         // 先删除旧图
         let splitArr = req.body.oldAvatar.split('/');
         let key = splitArr[splitArr.length - 1];
         await Qi.deleteFromQiniu(key);
       }
-      let key = req.body.imgName + Date.parse(new Date()) + '.png';
-      let base64str = req.body.cropperImg.replace('data:image/png;base64,', '');
-      let buff = new Buffer(base64str, 'base64');
-      let filePath = __dirname + '/' + key;
-      await fs.writeFile(filePath, buff);
-      let respBody = await Qi.putFileToQiniu(key, filePath);
+
       let updateResult = await userModel.findOneAndUpdate({ '_id' : req.body.userId }, {$set: {'avatar': 'http://' + config.qiniu.addr + '/' + respBody.key }})
       if (updateResult) {
         res.json({
