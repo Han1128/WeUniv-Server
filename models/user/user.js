@@ -32,6 +32,12 @@ const userSchema = new Schema(
     phone: {
       type: String
     },
+    QQ: {
+      type: String
+    },
+    WeChat: {
+      type: String
+    },
     hobby_tags: {
       type: Array
     },
@@ -71,7 +77,7 @@ const userSchema = new Schema(
     },
     schoolData: {
       // 一对一
-      type: mongoose.Schema.Types.ObjectId, ref: 'schoolData'
+      type: mongoose.Schema.Types.ObjectId, ref: 'school'
     },
     message: [
       // 一对多

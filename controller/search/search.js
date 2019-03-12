@@ -141,6 +141,30 @@ class Search {
       })
     }
   }
+  // 查询推荐内容 tag相关,不包含用户文章
+  async getRecommendUser(req, res, next) {
+    try {
+      let result = await userModel.find({
+        'hobby_tags': {
+          $in: req.body.tag // tag为用户选择的tag
+        }, $nor: [{ 
+          'author': req.body.userId 
+        }]
+      })
+      debugger
+      res.json({
+          success: true,
+          message:'查询成功',
+          result: result
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'文章查询失败'
+      })
+    }
+  }
 }
 
 module.exports = new Search();

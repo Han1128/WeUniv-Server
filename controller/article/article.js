@@ -209,16 +209,16 @@ class Article {
         '_id': req.body.articleId
       });
       // 删除七牛云资源
-      let contentArr = result.content.split('/');
-      let contentKey = contentArr[contentArr.length - 1];
-      contentKey = decodeURI(contentKey);
-      await Qi.deleteFromQiniu(contentKey);
-      if (result.coverBg[0]) {
-        let bgArr = result.coverBg[0].split('/');
-        let bgKey = bgArr[bgArr.length - 1];
-        bgKey = decodeURI(bgKey);
-        await Qi.deleteFromQiniu(bgKey);
-      }
+      // let contentArr = result.content.split('/');
+      // let contentKey = contentArr[contentArr.length - 1];
+      // contentKey = decodeURI(contentKey);
+      // await Qi.deleteFromQiniu(contentKey);
+      // if (result.coverBg[0]) {
+      //   let bgArr = result.coverBg[0].split('/');
+      //   let bgKey = bgArr[bgArr.length - 1];
+      //   bgKey = decodeURI(bgKey);
+      //   await Qi.deleteFromQiniu(bgKey);
+      // }
       // 删除用户表的数据
       await userModel.update({
         _id: result.author 
@@ -486,7 +486,7 @@ class Article {
       const result = await articleModel.find({
         author: req.query.userId
       }, {
-        type: 1, coverBg: 1, public_time: 1, likeBy: 1, collectBy: 1
+        type: 1, coverBg: 1, public_time: 1, like_num: 1, collect_num: 1, comment_num: 1
       });
       res.json({
           success: true,

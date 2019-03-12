@@ -10,5 +10,8 @@ router.post('/uploadAvatar', userController.uploadAvatar);
 router.get('/checkToken', userController.checkToken);
 router.get('/getUserDetails', userController.getUserDetails);
 router.get('/getUserDetails', userController.getUserDetails);
+router.post('/updateUserInfo', userController.updateUserInfo);
+
+router.post('/updateUserSchoolInfo', userController.updateUserSchoolInfo);
 
 module.exports = router

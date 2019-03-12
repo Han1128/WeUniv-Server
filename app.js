@@ -30,7 +30,7 @@ app.use(bodyParser.json({limit: '50mb'})) // parse application/json
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true})) // parse application/x-www-form-urlencoded
 
 app.get('/', function (req, res) {
-  res.send('GET request to the homepage');
+  res.send('GET request to the Weuniv homepage');
 });
 routes(app);
 

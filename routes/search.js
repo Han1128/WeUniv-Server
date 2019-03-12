@@ -5,5 +5,6 @@ const searchController = require('../controller/search/search');
 router.post('/blurrySearch', searchController.blurrySearch); // 长文添加
 router.get('/getHotArticleList', searchController.getHotArticleList); // 热文搜索
 router.get('/getRecommendArticle', searchController.getRecommendArticle); // 相关推荐
+router.get('/getRecommendUser', searchController.getRecommendUser); // 相关推荐
 
 module.exports = router
