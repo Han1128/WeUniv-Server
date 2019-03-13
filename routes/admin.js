@@ -9,4 +9,9 @@ router.post('/addUserByAdmin', adminController.addUserByAdmin);
 router.get('/getAdminInfo', checkAdmin, adminController.getAdminInfo); // 增加中间件验证信息有效性
 router.get('/getDataCount', checkAdmin, adminController.getDataCount); // 查询系统数据统计
 
+// qiniu
+router.get('/updateQiniuAvatarUrl', checkAdmin, adminController.updateQiniuAvatarUrl);
+router.get('/updateQiniuContentUrl', checkAdmin, adminController.updateQiniuContentUrl); // 查询系统数据统计
+router.get('/updateQiniuBgUrl', checkAdmin, adminController.updateQiniuBgUrl);
+
 module.exports = router;

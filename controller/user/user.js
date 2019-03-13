@@ -232,47 +232,6 @@ class User {
       })
     }
   }
-  // 修改更新用户信息
-  async updateUserInfo(req, res) {
-    try {
-      let condition = {};
-      condition[req.body.key] = req.body.value
-      debugger
-      await userModel.update({ _id: req.body.userId}, {
-        $set: condition
-      })
-      res.send({
-        success: true,
-        message: '更新成功'
-      })
-    } catch (err) {
-      console.log('err', err)
-      res.send({
-        success: false,
-        message: '查询用户信息失败,请稍后重试'
-      })
-    }
-  }
-  // 修改更新用户在校信息
-  async updateUserSchoolInfo(req, res) {
-    try {
-      let condition = {};
-      condition[req.body.key] = req.body.value
-      await schoolModel.update({ author: req.body.userId}, {
-        $set: condition
-      })
-      res.send({
-        success: true,
-        message: '更新成功'
-      })
-    } catch (err) {
-      console.log('err', err)
-      res.send({
-        success: false,
-        message: '查询用户信息失败,请稍后重试'
-      })
-    }
-  }
   // 头像上传
   async uploadAvatar(req, res) {
     try {

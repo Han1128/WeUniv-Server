@@ -162,6 +162,99 @@ class Admin {
       })
     }
   }
+
+  /************ 更新测试域名 **************/
+  // 更新背景图
+  async updateQiniuBgUrl(req, res, next) {
+    try {
+      let allBgUrl = await articleModel.find({
+        'coverBg.0': { $exists: true }
+      }, {
+        id: 1,
+        coverBg: 1
+      });
+      for (let item of allBgUrl) {
+        let arr = [];
+        for (let val of item.coverBg) {
+          arr.push(val.replace('http://pmwdq3oa6.bkt.clouddn.com/','http://pnybr76es.bkt.clouddn.com/'))
+        }
+        await articleModel.update({
+          _id: item.id
+        }, {
+          coverBg: arr
+        });
+      }
+      res.json({
+          success: true,
+          message:'修改成功'
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'修改失败'
+      })
+    }
+  }
+  // 更新内容
+  async updateQiniuContentUrl(req, res, next) {
+    try {
+      let allUrl = await articleModel.find({
+        type: 'long'
+      }, {
+        id: 1,
+        content: 1
+      });
+      for (let item of allUrl) {
+        // 更新content
+        let newContent = item.content.replace('http://pmwdq3oa6.bkt.clouddn.com/','http://pnybr76es.bkt.clouddn.com/')  
+        await articleModel.update({
+          _id: item.id
+        }, {
+          content: newContent
+        });
+      }
+      res.json({
+          success: true,
+          message:'修改成功'
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'修改失败'
+      })
+    }
+  }
+  // 更新头像
+  async updateQiniuAvatarUrl(req, res, next) {
+    try {
+      let allUser = await userModel.find({}, {
+        avatar: 1
+      });
+      for (let item of allUser) {
+        let newAvatar = '';
+        if (item.avatar) {
+          newAvatar = item.avatar.replace('http://pmwdq3oa6.bkt.clouddn.com/','http://pnybr76es.bkt.clouddn.com/')  
+        }
+        await userModel.update({
+          _id: item._id
+        }, {
+          avatar: newAvatar
+        });
+      }
+      res.json({
+          success: true,
+          message:'修改成功'
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'修改失败'
+      })
+    }
+  }
 }
 
 module.exports = new Admin();

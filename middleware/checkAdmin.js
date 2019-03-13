@@ -2,10 +2,10 @@ const userModel = require('../models/user/user')
 
 module.exports = async ( req, res, next ) => {
   try {
+    const adminId = req.query.adminId || req.body.adminId;
     const adminResult = await userModel.findOne({
-      _id: req.query.adminId
+      _id: adminId
     });
-    
     if (adminResult.userType === 'admin') {
       next()
     }
