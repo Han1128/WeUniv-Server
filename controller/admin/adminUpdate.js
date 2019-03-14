@@ -6,56 +6,13 @@ const tagModel = require('../../models/tag/tag');
 const schoolModel = require('../../models/user/school');
 const followModel = require('../../models/follow/follow');
 const articleModel = require('../../models/article/article');
+const adminSetModel = require('../../models/admin/adminSet');
 const messageModel = require('../../models/message/message');
 const commentionModel = require('../../models/Interaction/comment');
 const R = require('ramda');
 
-async function getLineData(type, gteTime, ltTime) {
-  return await messageModel.aggregate([
-    { 
-      "$match": { 
-        "messageType": type,
-        "time": {
-          "$gte" : gteTime,
-          '$lt': ltTime
-        }
-      } 
-    },
-    {
-      $group: {
-        _id: {
-          $dateToString: { format: "%Y-%m-%d", date: "$time" }
-        },
-        count: { $sum: 1 }
-      }
-    }
-  ])
-}
-class Admin {
-  // 获取管理员信息
-  async getAdminInfo(req, res, next) {
-    try {
-      const adminResult = await userModel.findOne({
-        _id: req.query.adminId
-      }, {
-        token: 0, status: 0, password: 0
-      });
-      res.json({
-        success: true,
-        message: '查询成功',
-        data: {
-          result: adminResult
-        }
-      })
-    } catch (error) {
-      console.log('error', error)
-      res.json({
-          success: false,
-          message:'查询失败'
-      })
-    }
-  }
-  // 热门文章查询
+class AdminUpdate {
+  // 添加标签/话题
   async addTopicTags(req, res, next) {
     try {
       const newTag = new tagModel({
@@ -120,49 +77,102 @@ class Admin {
       })
     }
   }
-  async getDataCount(req, res, next) {
+  // 强制修改密码
+  async resetPwdByAdmin(req, res, next) {
     try {
-      // TODO:后期应该加入status为1的条件
-      const user = await userModel.count();
-      const longArticle = await articleModel.count({type: 'long'}); 
-      const shortArticle = await articleModel.count({type: 'short'});
-      const like = await messageModel.count({messageType: 'like'});
-      const collect = await messageModel.count({messageType: 'collect'});
-      const comment = await commentionModel.count();
-      const tag = await tagModel.count();
-
-      const likeLine = await getLineData('like', new Date(new Date() - 6*24*3600*1000), new Date());
-      const collectLine = await getLineData('collect', new Date(new Date() - 6*24*3600*1000), new Date());
-      const commentLine = await getLineData('comment', new Date(new Date() - 6*24*3600*1000), new Date());
+      await userModel.update({
+        _id: req.body.userId
+      }, {
+        password: Bcrypt.genSalt(req.body.password)
+      })
       res.json({
           success: true,
-          message:'查询成功',
-          data: {
-            user,
-            like,
-            collect,
-            comment,
-            article: longArticle + shortArticle,
-            shortArticle,
-            longArticle,
-            tag
-          },
-          line: {
-            like: likeLine,
-            collect: collectLine,
-            comment: commentLine
-          }
-          // lineStatistics 
+          message:'修改成功'
       })
-      } catch (error) {
+    } catch (error) {
       console.log('error', error)
+      res.json({
+          success: false,
+          message:'修改失败'
+      })
+    }
+  }
+  // 添加推荐文章
+  async addToHomeRecommend(req, res, next) {
+    try {
+      await adminSetModel.update({
+        _id: req.body.setId,
+      }, {
+        recommendList: req.body.recommendList
+      })
+      res.json({
+          success: true,
+          message:'修改成功'
+      })
+    } catch (error) {
+      res.json({
+          success: false,
+          message:'修改失败'
+      })
+    }
+  }
+  // 添加推荐用户
+  async addToRecommendUser(req, res, next) {
+    try {
+      await adminSetModel.update({
+        _id: req.body.setId,
+      }, {
+        recommendUser: req.body.recommendUser
+      })
+      res.json({
+          success: true,
+          message:'修改成功'
+      })
+    } catch (error) {
+      res.json({
+          success: false,
+          message:'修改失败'
+      })
+    }
+  }
+  // 添加轮播
+  async addToHomeSwiper(req, res, next) {
+    try {
+      await adminSetModel.update({
+        _id: req.body.setId,
+      }, {
+        swiperList: req.body.swiperList
+      })
+      res.json({
+          success: true,
+          message:'修改成功'
+      })
+    } catch (error) {
+      res.json({
+          success: false,
+          message:'修改失败'
+      })
+    }
+  }
+  // 管理员配置初始化
+  async addAdminSet(req, res, next) {
+    try {
+      const newAdminSet = new adminSetModel({
+        updateTime: new Date(),
+        setBy: req.body.adminId
+      })
+      await adminSetModel.create(newAdminSet);
+      res.json({
+          success: true,
+          message:'添加成功'
+      })
+    } catch (error) {
       res.json({
           success: false,
           message:'添加失败'
       })
     }
   }
-
   /************ 更新测试域名 **************/
   // 更新背景图
   async updateQiniuBgUrl(req, res, next) {
@@ -257,4 +267,4 @@ class Admin {
   }
 }
 
-module.exports = new Admin();
+module.exports = new AdminUpdate();

@@ -150,7 +150,7 @@ class Search {
         }, $nor: [{ 
           'author': req.body.userId 
         }]
-      })
+      }).limit(5)
       debugger
       res.json({
           success: true,

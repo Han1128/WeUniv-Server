@@ -1,17 +1,26 @@
 const express = require('express')
 const router = express.Router();
-const adminController = require('../controller/admin/admin');
+const adminSearchController = require('../controller/admin/adminSearch');
+const adminUpdateController = require('../controller/admin/adminUpdate');
 
 const checkAdmin = require('../middleware/checkAdmin');
 
-router.post('/addTopicTags', adminController.addTopicTags);
-router.post('/addUserByAdmin', adminController.addUserByAdmin);
-router.get('/getAdminInfo', checkAdmin, adminController.getAdminInfo); // 增加中间件验证信息有效性
-router.get('/getDataCount', checkAdmin, adminController.getDataCount); // 查询系统数据统计
+// 添加或更改
+router.post('/addTopicTags', adminUpdateController.addTopicTags);
+router.post('/addUserByAdmin', adminUpdateController.addUserByAdmin);
+router.post('/addAdminSet', checkAdmin, adminUpdateController.addAdminSet);
+router.post('/addToHomeSwiper', checkAdmin, adminUpdateController.addToHomeSwiper);
+router.post('/addToHomeRecommend', checkAdmin, adminUpdateController.addToHomeRecommend);
+router.post('/addToRecommendUser', checkAdmin, adminUpdateController.addToRecommendUser);
+router.post('/resetPwdByAdmin', checkAdmin, adminUpdateController.resetPwdByAdmin); // 强制修改密码
+
+// 查询
+router.get('/getAdminInfo', checkAdmin, adminSearchController.getAdminInfo); // 增加中间件验证信息有效性
+router.get('/getDataCount', checkAdmin, adminSearchController.getDataCount); // 查询系统数据统计
 
 // qiniu
-router.get('/updateQiniuAvatarUrl', checkAdmin, adminController.updateQiniuAvatarUrl);
-router.get('/updateQiniuContentUrl', checkAdmin, adminController.updateQiniuContentUrl); // 查询系统数据统计
-router.get('/updateQiniuBgUrl', checkAdmin, adminController.updateQiniuBgUrl);
+router.get('/updateQiniuAvatarUrl', checkAdmin, adminUpdateController.updateQiniuAvatarUrl);
+router.get('/updateQiniuContentUrl', checkAdmin, adminUpdateController.updateQiniuContentUrl); // 查询系统数据统计
+router.get('/updateQiniuBgUrl', checkAdmin, adminUpdateController.updateQiniuBgUrl);
 
 module.exports = router;

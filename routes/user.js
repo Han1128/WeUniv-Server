@@ -10,7 +10,6 @@ router.post('/checkUserExist', userController.checkUserExist);
 router.post('/uploadAvatar', userController.uploadAvatar);
 router.get('/checkToken', userController.checkToken);
 router.get('/getUserDetails', userController.getUserDetails);
-router.get('/getUserDetails', userController.getUserDetails);
 
 // 修改部分
 router.post('/resetUserEmail', userUpdateController.resetUserEmail); // 修改邮箱
