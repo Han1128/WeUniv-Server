@@ -17,6 +17,7 @@ router.post('/resetPwdByAdmin', checkAdmin, adminUpdateController.resetPwdByAdmi
 // 查询
 router.get('/getAdminInfo', checkAdmin, adminSearchController.getAdminInfo); // 增加中间件验证信息有效性
 router.get('/getDataCount', checkAdmin, adminSearchController.getDataCount); // 查询系统数据统计
+router.get('/getAdminMenuList', checkAdmin, adminSearchController.getAdminMenuList); // 增加中间件验证信息有效性
 
 // qiniu
 router.get('/updateQiniuAvatarUrl', checkAdmin, adminUpdateController.updateQiniuAvatarUrl);

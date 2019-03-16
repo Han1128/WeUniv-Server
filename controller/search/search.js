@@ -1,5 +1,7 @@
 const config = require('../../config/index');
 const userModel = require('../../models/user/user');
+const followModel = require('../../models/follow/follow');
+const adminSetModel = require('../../models/admin/adminSet');
 const tagModel = require('../../models/tag/tag');
 const articleModel = require('../../models/article/article');
 const R = require('ramda');
@@ -141,17 +143,41 @@ class Search {
       })
     }
   }
-  // 查询推荐内容 tag相关,不包含用户文章
+  // 推薦用戶
   async getRecommendUser(req, res, next) {
     try {
-      let result = await userModel.find({
-        'hobby_tags': {
-          $in: req.body.tag // tag为用户选择的tag
-        }, $nor: [{ 
-          'author': req.body.userId 
-        }]
-      }).limit(5)
-      debugger
+      // 判斷用戶是否关注人数为0
+      let result;
+      if (req.query.noFollowing === "true") {
+        result = await adminSetModel.findOne({
+          _id: '5c89b40fbae324b5b5dc900d'
+        }, {
+          recommendUser: 1
+        })
+        .populate({
+          path: 'recommendUser',
+          model: 'user',
+          select: {
+            username: 1,
+            userType: 1,
+            avatar: 1,
+            article: 1
+          }
+        });
+        result = result.recommendUser;
+      }
+      else {
+        result = await userModel.find({
+            'hobby_tags': {
+              $in: req.query.tag // tag为用户选择的tag
+            }, 
+            "$nor": [{ 
+              '_id': {
+                $in: req.query.excludeList
+              }
+            }]
+        })
+      }
       res.json({
           success: true,
           message:'查询成功',

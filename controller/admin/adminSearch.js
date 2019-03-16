@@ -6,6 +6,7 @@ const tagModel = require('../../models/tag/tag');
 const schoolModel = require('../../models/user/school');
 const followModel = require('../../models/follow/follow');
 const articleModel = require('../../models/article/article');
+const adminSetModel = require('../../models/admin/adminSet');
 const messageModel = require('../../models/message/message');
 const commentionModel = require('../../models/Interaction/comment');
 const R = require('ramda');
@@ -95,6 +96,54 @@ class AdminSearch {
       res.json({
           success: false,
           message:'添加失败'
+      })
+    }
+  }
+  // 
+  async getAdminMenuList(req, res, next) {
+    try {
+      const recommendList = await adminSetModel.findOne({
+        _id: '5c89b40fbae324b5b5dc900d'
+      });
+      let result;
+      let count;
+      if (req.query.type === 'article') {
+        result = await articleModel.find()
+                .populate('author')
+                .sort({'public_time': -1})
+                .skip(req.query.pageNum * 10)
+                .limit(10);
+        count = await articleModel.find({}).count();
+      }
+      else if (req.query.type === 'user') {
+        result = await userModel.find({})
+                .populate('schoolData')
+                .populate('message')
+                .sort({'public_time': -1})
+                .skip(req.query.pageNum * 10)
+                .limit(10);
+        count = await userModel.find({}).count();
+      }
+      else {
+        result = await tagModel.find({})
+                .skip(req.query.pageNum * 10)
+                .limit(10);
+        count = await tagModel.find({}).count();
+      }
+      res.json({
+        success: true,
+        message:'查询成功',
+        data: {
+          recommendList,
+          result,
+          count
+        }
+    })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'数据查询失败'
       })
     }
   }

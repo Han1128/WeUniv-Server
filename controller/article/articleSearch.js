@@ -4,6 +4,7 @@ const articleModel = require('../../models/article/article');
 const adminSetModel = require('../../models/admin/adminSet');
 const Qi = require('../../utils/qiniu');
 const request = require('request');
+const mongoose = require('../../mongodb/db');
 const R = require('ramda');
 
 async function getArticle(condition = {}, sort = {'public_time': -1}) {
@@ -57,9 +58,18 @@ class ArticleSearch {
   // 获取指定文章信息(单个查询)
   async getDesignArticle(req, res, next) {
     try {
+      // 查看文章不是自己的
+      if (!req.query.addView) {
+        await articleModel.update({
+          _id: req.query.articleId
+        }, {
+          $inc: { 'viewsTime': 1 }
+        });
+      }
+      
       let article = await getArticle({
         '_id': req.query.articleId
-      }, {});
+      });
       request(article[0].content, function (error, response, body) {
         if (!error && response.statusCode == 200) {
           let result = article[0].toObject();
@@ -283,7 +293,8 @@ class ArticleSearch {
           avatar: 1,
           article: 1
         }
-      })
+      });
+
       // 推荐文章
       const recommendArticle = await getArticle({ 
         "$or": [
@@ -304,6 +315,7 @@ class ArticleSearch {
           }
         ]
       });
+
       // 校内资讯
       const schoolNews = await articleModel.find({
         'tag': {
@@ -312,7 +324,7 @@ class ArticleSearch {
           'type': 'short'
         }]
       }).sort({'public_time': -1}).limit(5);
-      debugger
+      // debugger
       res.json({
           success: true,
           message:'查询成功',
