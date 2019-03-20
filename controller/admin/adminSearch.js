@@ -11,6 +11,28 @@ const messageModel = require('../../models/message/message');
 const commentionModel = require('../../models/Interaction/comment');
 const R = require('ramda');
 
+async function getArticleLineData (type, gteTime, ltTime) { 
+  return await articleModel.aggregate([
+    {
+      "$match": { 
+        "type": type,
+        "public_time": {
+          "$gte" : gteTime,
+          '$lt': ltTime
+        }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%Y-%m-%d", date: "$public_time" }
+        },
+        count: { $sum: 1 }
+      }
+    }
+  ])
+}
+
 async function getLineData(type, gteTime, ltTime) {
   return await messageModel.aggregate([
     { 
@@ -56,7 +78,7 @@ class AdminSearch {
       })
     }
   }
-  // 概况统计数据
+  // 按时间间隔统计交互数据
   async getDataCount(req, res, next) {
     try {
       // TODO:后期应该加入status为1的条件
@@ -99,7 +121,7 @@ class AdminSearch {
       })
     }
   }
-  // 
+  // 用户信息管理和文章信息管理table
   async getAdminMenuList(req, res, next) {
     try {
       const recommendList = await adminSetModel.findOne({
@@ -144,6 +166,156 @@ class AdminSearch {
       res.json({
           success: false,
           message:'数据查询失败'
+      })
+    }
+  }
+  // 获取数据最大值
+  async getMostData(req, res, next) {
+    try {
+      // 阅读前五
+      const mostReading = await articleModel.find({}, {viewsTime: 1, title: 1})
+                            .populate({
+                              path: 'author',
+                              model: 'user',
+                              select: {
+                                username: 1
+                              }
+                            })
+                            .sort({'viewsTime': -1})
+                            .limit(5);
+      // 点赞前5
+      const mostLike = await articleModel.find({type: 'long'}, {title: 1, like_num: 1})
+                            .sort({'like_num': -1})
+                            .limit(5);
+      // 收藏前5
+      const mostCollect = await articleModel.find({type: 'long'}, {title: 1, collect_num: 1})
+                            .sort({'collect_num': -1})
+                            .limit(5);
+      // 热议前5
+      const mostComment = await articleModel.find({}, {title: 1, comment_num: 1})
+                            .sort({'comment_num': -1})
+                            .limit(5);                  
+      // 发文最多用户
+      // const mostStudent = await userModel.find({}, {username: 1, article: 1}).sort({})
+      // 最受关注用户
+      const mostUser = await followModel.find({})
+                            .populate({
+                              path: 'author',
+                              model: 'user',
+                              select: {
+                                username: 1
+                              }
+                            })
+                            .sort({'follower_num':-1}).limit(1);
+      // 话题关注人最多
+      const mostTag = await tagModel.find({}).sort({'follower_num': -1}).limit(1);
+      // debugger
+      res.json({
+        success: true,
+        message: '查询成功',
+        data: {
+          mostReading,
+          mostLike,
+          mostCollect,
+          mostComment,
+          mostUser,
+          mostTag
+        }
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'查询失败'
+      })
+    }
+  }
+  // 文章发布曲线
+  async getArticleStatistics(req, res, next) {
+    try {
+      const shortLine = await getArticleLineData('short' ,new Date(new Date() - 6*24*3600*1000), new Date());
+      const longLine = await getArticleLineData('long' ,new Date(new Date() - 6*24*3600*1000), new Date());
+      // debugger
+      res.json({
+          success: true,
+          message:'查询成功',
+          data: {
+            shortLine,
+            longLine,
+          }
+      })
+      } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'添加失败'
+      })
+    }
+  }
+  // 话题列表
+  async getAdminTagsList(req, res, next) {
+    try {
+      const result = await tagModel.find({})
+      .skip(req.query.pageNum * 10)
+      .limit(10);;
+      const count = await tagModel.find({}).count();
+      res.json({
+          success: true,
+          message:'查询成功',
+          data: {
+            result,
+            count
+          }
+      })
+    } 
+    catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'添加失败'
+      })
+    }
+  }
+  // 评论列表
+  async getAdminCommentsList(req, res, next) {
+    try {
+      // 需要将无效评论筛选掉
+      const result = await commentionModel.find({})
+        .populate({
+          path: 'from_author',
+          model: 'user',
+          select: {
+            username: 1
+          }
+        })
+        .populate({
+          path: 'from_article',
+          model: 'article',
+          select: {
+            title: 1
+          }
+        })
+        .populate({
+          path: 'from_comment',
+          model: 'comment'
+        })
+        .skip(req.query.pageNum * 10)
+        .limit(10);
+      const count = await commentionModel.find({}).count();
+      res.json({
+          success: true,
+          message:'查询成功',
+          data: {
+            result,
+            count
+          }
+      })
+    } 
+    catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'添加失败'
       })
     }
   }

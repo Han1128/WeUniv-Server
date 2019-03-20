@@ -59,14 +59,13 @@ class ArticleSearch {
   async getDesignArticle(req, res, next) {
     try {
       // 查看文章不是自己的
-      if (!req.query.addView) {
+      if (req.query.addView === "false") {
         await articleModel.update({
           _id: req.query.articleId
         }, {
           $inc: { 'viewsTime': 1 }
         });
       }
-      
       let article = await getArticle({
         '_id': req.query.articleId
       });
@@ -323,7 +322,24 @@ class ArticleSearch {
         }, $nor: [{ 
           'type': 'short'
         }]
-      }).sort({'public_time': -1}).limit(5);
+      }, {
+        title: 1,
+        author:1, 
+        like_num: 1, 
+        collect_num: 1, 
+        comment_num: 1, 
+        public_time: 1, 
+        viewsTime: 1
+      })
+      .populate({
+        path: 'author',
+        model: 'user',
+        select: {
+          _id: 1,
+          username: 1,
+        }
+      })
+      .sort({'public_time': -1}).limit(5);
       // debugger
       res.json({
           success: true,

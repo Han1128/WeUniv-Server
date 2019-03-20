@@ -101,9 +101,21 @@ class AdminUpdate {
   async addToHomeRecommend(req, res, next) {
     try {
       await adminSetModel.update({
-        _id: req.body.setId,
+        _id: '5c89b40fbae324b5b5dc900d',
       }, {
-        recommendList: req.body.recommendList
+        $push: {
+          recommendList: {
+            $each : [].concat(req.body.articleId),
+            $position: 0
+          }
+        }
+      })
+      await adminSetModel.update({
+        _id: '5c89b40fbae324b5b5dc900d',
+      }, {
+        $pop: {
+          recommendList: 1
+        }
       })
       res.json({
           success: true,
@@ -119,10 +131,23 @@ class AdminUpdate {
   // 添加推荐用户
   async addToRecommendUser(req, res, next) {
     try {
+      // 先加再删
       await adminSetModel.update({
-        _id: req.body.setId,
+        _id: '5c89b40fbae324b5b5dc900d',
       }, {
-        recommendUser: req.body.recommendUser
+        $push: {
+          recommendUser: {
+            $each : [].concat(req.body.userId),
+            $position: 0
+          }
+        }
+      })
+      await adminSetModel.update({
+        _id: '5c89b40fbae324b5b5dc900d',
+      }, {
+        $pop: {
+          recommendUser: 1
+        }
       })
       res.json({
           success: true,
@@ -138,19 +163,52 @@ class AdminUpdate {
   // 添加轮播
   async addToHomeSwiper(req, res, next) {
     try {
+      // 先加再删
       await adminSetModel.update({
-        _id: req.body.setId,
+        _id: '5c89b40fbae324b5b5dc900d',
       }, {
-        swiperList: req.body.swiperList
+        $push: {
+          swiperList: {
+            $each : [].concat(req.body.articleId),
+            $position: 0
+          }
+        }
+      })
+      await adminSetModel.update({
+        _id: '5c89b40fbae324b5b5dc900d',
+      }, {
+        $pop: {
+          swiperList: 1
+        }
       })
       res.json({
           success: true,
           message:'修改成功'
       })
     } catch (error) {
+      console.log('error', error)
       res.json({
           success: false,
           message:'修改失败'
+      })
+    }
+  }
+  // 删除评论
+  async deleteComment(req, res, next) {
+    try {
+      await commentionModel.update({
+        _id: req.body.commentId  
+      }, {
+        isEffect: false
+      })
+      res.json({
+          success: true,
+          message:'添加成功'
+      })
+    } catch (error) {
+      res.json({
+          success: false,
+          message:'删除失败'
       })
     }
   }
