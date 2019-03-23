@@ -211,7 +211,7 @@ class ArticleUpdate {
         type: 'short',
         content: req.body.content,
         status: 1,
-        tag: '说说',
+        tag: req.body.tags,
         public_time: new Date(),
         author: req.body.userId,
         coverBg: bgArr,

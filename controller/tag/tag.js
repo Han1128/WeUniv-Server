@@ -1,6 +1,8 @@
 const config = require('../../config/index');
 const userModel = require('../../models/user/user');
+const articleModel = require('../../models/article/article');
 const tagModel = require('../../models/tag/tag');
+const commonFun = require('../common/common');
 const R = require('ramda');
 
 class Tag {
@@ -83,7 +85,7 @@ class Tag {
   }
   async getUserTags(req, res) {
     try {
-      let result = await tagModel.find({
+      const userTags = await tagModel.find({
         'follower':{
           $in: req.query.userId
         }
@@ -92,13 +94,48 @@ class Tag {
         success: true,
         message: '查询成功',
         data: {
-          result: result
+          userTags
         }
       })
     } catch (err) {
       res.send({
         success: false,
         message: '查询用户信息失败,请稍后重试'
+      })
+    }
+  }
+  async getTagInfo(req, res) {
+    try {
+      const tagInfo = await tagModel.findOne({
+        _id: req.query.tagId
+      })
+      .populate({
+        path: 'follower',
+        model: 'user',
+        select: {
+          _id: 1,
+          username: 1,
+          avatar: 1
+        }
+      });
+
+      const articleDetails = await commonFun.getArticle({
+        'tag': {
+          "$in": tagInfo.iconLabel
+        }
+      });
+      res.send({
+        success: true,
+        message: '查询成功',
+        data: {
+          tagInfo,
+          articleDetails
+        }
+      })
+    } catch (err) {
+      res.send({
+        success: false,
+        message: '查询失败'
       })
     }
   }
