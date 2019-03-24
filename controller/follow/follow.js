@@ -213,7 +213,8 @@ class Follow {
             }
           }
         }
-      }).sort({'public_time': -1});
+      }).sort({'public_time': -1}).skip(Number(req.query.skip)).limit(Number(req.query.limit));
+
       res.send({
         success: true,
         message: '文章查询成功',

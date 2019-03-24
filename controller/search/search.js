@@ -129,7 +129,7 @@ class Search {
           username: 1,
           avatar: 1
         }
-      });
+      }).limit(5);
       res.json({
           success: true,
           message:'查询成功',

@@ -7,7 +7,7 @@ const request = require('request');
 const mongoose = require('../../mongodb/db');
 const R = require('ramda');
 
-async function getArticle(condition = {}, sort = {'public_time': -1}) {
+async function getArticle(condition = {}, sort = {'public_time': -1}, skip = 0, limit = 10) {
   return await articleModel.find(condition)
   .populate({
     path: 'author',
@@ -52,7 +52,7 @@ async function getArticle(condition = {}, sort = {'public_time': -1}) {
         }
       }
     }
-  }).sort(sort);
+  }).sort(sort).skip(skip).limit(limit);
 }
 class ArticleSearch {
   // 获取指定文章信息(单个查询)
@@ -135,7 +135,7 @@ class ArticleSearch {
         'author': req.query.userid 
       }, {
         'isTop': -1,'public_time': -1
-      });
+      }, Number(req.query.skip), Number(req.query.limit));
       res.send({
         success: true,
         message: '文章查询成功',
@@ -156,7 +156,7 @@ class ArticleSearch {
       // 多层关联查询
       let result = await getArticle({ 
         'commentFrom.4': { $exists: true } // 查询评论数大于1的文章
-      });
+      }, {'public_time': -1}, Number(req.query.skip), Number(req.query.limit));
       res.send({
         success: true,
         message: '文章查询成功',
@@ -184,7 +184,7 @@ class ArticleSearch {
           'tag': new RegExp(req.query.tagLabel, "i")
         }]
         // 查询评论数大于1的文章
-      });
+      }, {'public_time': -1}, Number(req.query.skip), Number(req.query.limit));
       res.send({
         success: true,
         message: '文章查询成功',
@@ -204,11 +204,11 @@ class ArticleSearch {
   async getArticleByRange(req, res, next) {
     try {
       // 多层关联查询
-      const result = await getArticle({ "public_time" : { 
+      const result = await getArticle({ "public_time" : {
         "$gte" : new Date(req.query.time).toISOString()
       } }, {
         'like_num': -1, 'collect_num': -1
-      });
+      }, Number(req.query.skip), Number(req.query.limit));
       res.send({
         success: true,
         message: '文章查询成功',
@@ -227,7 +227,7 @@ class ArticleSearch {
   // 查询最新文章记录
   async getNewestArticle(req, res, next) {
     try {
-      let result = await getArticle();
+      let result = await getArticle({}, {'public_time': -1}, Number(req.query.skip), Number(req.query.limit));
       res.send({
         success: true,
         message: '文章查询成功',
@@ -295,7 +295,7 @@ class ArticleSearch {
       });
 
       // 推荐文章
-      const recommendArticle = await getArticle({ 
+      const recommendArticle = await getArticle({
         "$or": [
           {
             '_id': {
@@ -313,8 +313,7 @@ class ArticleSearch {
             }
           }
         ]
-      });
-
+      }, {'public_time': -1}, Number(req.query.skip), Number(req.query.limit));
       // 校内资讯
       const schoolNews = await articleModel.find({
         'tag': {
@@ -340,7 +339,6 @@ class ArticleSearch {
         }
       })
       .sort({'public_time': -1}).limit(5);
-      // debugger
       res.json({
           success: true,
           message:'查询成功',

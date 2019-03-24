@@ -15,11 +15,16 @@ class AdminUpdate {
   // 添加标签/话题
   async addTopicTags(req, res, next) {
     try {
-      const newTag = new tagModel({
-        iconCode: req.body.code,
-        iconLabel: req.body.label
-      })
-      await newTag.save();
+      await tagModel.findOneAndUpdate(
+        {iconCode: req.body.iconCode}, 
+        {$set: {'iconCode': req.body.iconCode, 'iconLabel': req.body.iconLabel}}, 
+        {upsert: true}
+      )
+      // const newTag = new tagModel({
+      //   iconCode: req.body.code,
+      //   iconLabel: req.body.label
+      // })
+      // await newTag.save();
       res.json({
           success: true,
           message:'添加成功'
@@ -64,10 +69,78 @@ class AdminUpdate {
         follower_num: 0
       })
       await followModel.create(newFollow);
-      
       res.json({
           success: true,
           message: '用户添加成功'
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'添加失败'
+      })
+    }
+  }
+  // 管理员不通过邮箱验证直接添加用户
+  async updateUserByAdmin(req, res, next) {
+    try {
+      await userModel.findOneAndUpdate(
+        {
+          _id: req.body.userId
+        }, 
+        {
+          $set: {
+            username: req.body.username,
+            email: req.body.email,
+            userType: req.body.userType,
+            password: Bcrypt.genSalt(req.body.password),
+            gender: req.body.gender,
+            status: req.body.status,
+            // birth: req.body.birth,
+            // token: '',
+            // follow: newObjectId,
+            // schoolData: newObjectId,
+            // topArticle: '',
+            // createTime: new Date()
+          }
+        }, 
+        {
+          upsert: true
+        }
+      )
+      // const newObjectId = mongoose.Types.ObjectId();
+      // const newUser = new userModel({
+      //   username: req.body.username,
+      //   email: req.body.email,
+      //   userType: req.body.userType,
+      //   password: Bcrypt.genSalt(req.body.password),
+      //   gender: req.body.gender,
+      //   birth: req.body.birth,
+      //   token: '',
+      //   status: 1,
+      //   follow: newObjectId,
+      //   schoolData: newObjectId,
+      //   topArticle: '',
+      //   createTime: new Date()
+      // })
+      // await userModel.create(newUser);
+
+      // const newSchoolData = new schoolModel({
+      //   _id: newObjectId,
+      //   author: newUser._id
+      // })
+      // await newSchoolData.save();
+      // const newFollow = new followModel({
+      //   _id: newObjectId,
+      //   author: newUser._id,
+      //   following_num: 0,
+      //   follower_num: 0
+      // })
+      // await followModel.create(newFollow);
+      
+      res.json({
+          success: true,
+          message: '成功'
       })
     } catch (error) {
       console.log('error', error)
@@ -209,6 +282,25 @@ class AdminUpdate {
       res.json({
           success: false,
           message:'删除失败'
+      })
+    }
+  }
+  // 删除评论
+  async deleteArticle(req, res, next) {
+    try {
+      await articleModel.update({
+        _id: req.body.articleId  
+      }, {
+        status: req.body.status
+      })
+      res.json({
+          success: true,
+          message:'修改成功'
+      })
+    } catch (error) {
+      res.json({
+          success: false,
+          message:'修改失败'
       })
     }
   }

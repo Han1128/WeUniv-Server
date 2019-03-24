@@ -8,12 +8,14 @@ const checkAdmin = require('../middleware/checkAdmin');
 // 添加或更改
 router.post('/addTopicTags', adminUpdateController.addTopicTags);
 router.post('/addUserByAdmin', adminUpdateController.addUserByAdmin);
+router.post('/updateUserByAdmin', adminUpdateController.updateUserByAdmin);
 router.post('/addAdminSet', checkAdmin, adminUpdateController.addAdminSet);
 router.post('/addToHomeSwiper', checkAdmin, adminUpdateController.addToHomeSwiper);
 router.post('/addToHomeRecommend', checkAdmin, adminUpdateController.addToHomeRecommend);
 router.post('/addToRecommendUser', checkAdmin, adminUpdateController.addToRecommendUser);
 router.post('/resetPwdByAdmin', checkAdmin, adminUpdateController.resetPwdByAdmin); // 强制修改密码
 router.post('/deleteComment', checkAdmin, adminUpdateController.deleteComment);
+router.post('/deleteArticle', checkAdmin, adminUpdateController.deleteArticle);
 
 // 查询
 router.get('/getAdminInfo', checkAdmin, adminSearchController.getAdminInfo); // 增加中间件验证信息有效性
