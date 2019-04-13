@@ -1,6 +1,11 @@
 const articleModel = require('../../models/article/article');
 
 module.exports = {
+  /**
+   * 由文章集合一次关联多个集合拿取数据集合
+   * @param {Object} condition -查询条件
+   * @param {Object} sort -排序条件
+   */
   getArticle: async function(condition = {}, sort = {'public_time': -1}) {
     return await articleModel.find(condition)
       .populate({

@@ -16,8 +16,8 @@ module.exports = {
   qiniu: {
     accessKey: 'aCbZAXsFXjSQ0L6hPhR5xTXDY5CtlSMoa6aFbV-1',
     secretKey: 'hZL_VodWVCmPAWHJ8wyuE4XnGBWaG4pUaEv43tNm',
-    bucket: 'we_univ',
-    addr: 'pnybr76es.bkt.clouddn.com',
-    publicBucketDomain: 'http://pnybr76es.bkt.clouddn.com'
+    bucket: 'weuniv',
+    addr: 'pp6ab9tdt.bkt.clouddn.com',
+    publicBucketDomain: 'http://pp6ab9tdt.bkt.clouddn.com'
   }
 }

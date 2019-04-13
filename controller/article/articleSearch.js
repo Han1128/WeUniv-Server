@@ -23,6 +23,7 @@ async function getArticle(condition = {}, sort = {'public_time': -1}, skip = 0, 
   }).populate({
     path: 'commentFrom', // article中的关联名 不是关联文档的model名
     model: 'comment', // model代表ref连接的文档名
+    match: { isEffect: true },
     populate: {
       path: 'from_author',
       model: 'user',
@@ -37,6 +38,7 @@ async function getArticle(condition = {}, sort = {'public_time': -1}, skip = 0, 
   }).populate({
     path: 'commentFrom', // article中的关联名 不是关联文档的model名
     model: 'comment', // model代表ref连接的文档名
+    match: { isEffect: true },
     populate: {
       path: 'from_comment',
       model: 'comment',
@@ -67,7 +69,7 @@ class ArticleSearch {
         });
       }
       let article = await getArticle({
-        '_id': req.query.articleId
+        '_id': req.query.articleId,
       });
       request(article[0].content, function (error, response, body) {
         if (!error && response.statusCode == 200) {
@@ -353,6 +355,34 @@ class ArticleSearch {
       res.send({
         success: false,
         message: '主页轮播文章获取失败'
+      })
+    }
+  }
+  async getSearchArticles(req, res, next) {
+    try {
+      let result = await getArticle({
+        author: req.query.userid,
+        "$or": [{
+          'title': new RegExp(req.query.search, "i")
+        }, {
+          'text': new RegExp(req.query.search, "i")
+        }, {
+          'tag': new RegExp(req.query.search, "i")
+        }]
+      }, {
+        'isTop': -1,'public_time': -1
+      }, 0, null);
+      res.send({
+        success: true,
+        message: '文章查询成功',
+        data: {
+          result
+        }
+      })
+    } catch (error) {
+      res.send({
+        success: false,
+        message: '文章查询失败,请稍后重试'
       })
     }
   }

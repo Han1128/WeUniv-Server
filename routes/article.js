@@ -11,6 +11,7 @@ router.post('/articleDelete', articleUpdateController.articleDelete); // 文章�
 
 // 文章查询
 router.get('/getUserArticles', articleSearchController.getUserArticles);
+router.get('/getSearchArticles', articleSearchController.getSearchArticles);
 router.get('/getUserGallery', articleSearchController.getUserGallery);
 router.get('/getArticleContent', articleSearchController.getArticleContent);
 router.get('/getDesignArticle', articleSearchController.getDesignArticle); // 获取特定文章 单个查询

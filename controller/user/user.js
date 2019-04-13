@@ -180,33 +180,26 @@ class User {
    * @param {*} res 
    */
   checkUserExist(req, res) {
-    const checkOption = req.body.checkType === 'username' ? {
-      username: req.body.checkData
+    const checkOption = req.query.checkType === 'username' ? {
+      username: req.query.checkData,
+      status: 1
     } : {
-      email: req.body.checkData
+      email: req.query.checkData,
+      status: 1
     }
     userModel.findOne(checkOption, function(err, ret) {
       if (err) return;
       if (ret) {
-        if (ret && ret.status) {
-          // 存在且已激活
-          res.json({
-              success: false,
-              message: '该用户已注册！'
-          })
-        }
-        else {
-          // 存在未激活
-          res.json({
-              success: false,
-              message: '该用户未激活邮箱！'
-          })
-        }
+        // 存在且已激活
+        res.json({
+            success: false,
+            message: req.query.checkType === 'username' ? '该用户已注册!' : '该邮箱已被注册!'
+        })
       }
       else {
         res.json({
             success: true,
-            message: '该用户未注册！'
+            message: '该用户名可用！'
         })
       }
     })

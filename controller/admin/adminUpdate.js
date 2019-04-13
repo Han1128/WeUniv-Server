@@ -81,7 +81,7 @@ class AdminUpdate {
       })
     }
   }
-  // 管理员不通过邮箱验证直接添加用户
+  // 管理员更新用户信息
   async updateUserByAdmin(req, res, next) {
     try {
       await userModel.findOneAndUpdate(
@@ -94,53 +94,14 @@ class AdminUpdate {
             email: req.body.email,
             userType: req.body.userType,
             password: Bcrypt.genSalt(req.body.password),
-            gender: req.body.gender,
-            status: req.body.status,
-            // birth: req.body.birth,
-            // token: '',
-            // follow: newObjectId,
-            // schoolData: newObjectId,
-            // topArticle: '',
-            // createTime: new Date()
+            gender: req.body.gender
           }
-        }, 
-        {
-          upsert: true
         }
       )
-      // const newObjectId = mongoose.Types.ObjectId();
-      // const newUser = new userModel({
-      //   username: req.body.username,
-      //   email: req.body.email,
-      //   userType: req.body.userType,
-      //   password: Bcrypt.genSalt(req.body.password),
-      //   gender: req.body.gender,
-      //   birth: req.body.birth,
-      //   token: '',
-      //   status: 1,
-      //   follow: newObjectId,
-      //   schoolData: newObjectId,
-      //   topArticle: '',
-      //   createTime: new Date()
-      // })
-      // await userModel.create(newUser);
-
-      // const newSchoolData = new schoolModel({
-      //   _id: newObjectId,
-      //   author: newUser._id
-      // })
-      // await newSchoolData.save();
-      // const newFollow = new followModel({
-      //   _id: newObjectId,
-      //   author: newUser._id,
-      //   following_num: 0,
-      //   follower_num: 0
-      // })
-      // await followModel.create(newFollow);
       
       res.json({
           success: true,
-          message: '成功'
+          message: '添加成功'
       })
     } catch (error) {
       console.log('error', error)
@@ -274,11 +235,19 @@ class AdminUpdate {
       }, {
         isEffect: false
       })
+      await articleModel.update({
+        'commentFrom': {
+          $in: req.body.commentId 
+        }
+      }, {
+        $inc: { 'comment_num': -1 }
+      })
       res.json({
           success: true,
-          message:'添加成功'
+          message:'修改成功'
       })
     } catch (error) {
+      console.log('error', error)
       res.json({
           success: false,
           message:'删除失败'
@@ -336,7 +305,7 @@ class AdminUpdate {
       for (let item of allBgUrl) {
         let arr = [];
         for (let val of item.coverBg) {
-          arr.push(val.replace('http://pmwdq3oa6.bkt.clouddn.com/','http://pnybr76es.bkt.clouddn.com/'))
+          arr.push(val.replace('http://pnybr76es.bkt.clouddn.com/', 'http://pp6ab9tdt.bkt.clouddn.com/'))
         }
         await articleModel.update({
           _id: item.id
@@ -367,7 +336,7 @@ class AdminUpdate {
       });
       for (let item of allUrl) {
         // 更新content
-        let newContent = item.content.replace('http://pmwdq3oa6.bkt.clouddn.com/','http://pnybr76es.bkt.clouddn.com/')  
+        let newContent = item.content.replace('http://pnybr76es.bkt.clouddn.com/', 'http://pp6ab9tdt.bkt.clouddn.com/')  
         await articleModel.update({
           _id: item.id
         }, {
@@ -395,7 +364,7 @@ class AdminUpdate {
       for (let item of allUser) {
         let newAvatar = '';
         if (item.avatar) {
-          newAvatar = item.avatar.replace('http://pmwdq3oa6.bkt.clouddn.com/','http://pnybr76es.bkt.clouddn.com/')  
+          newAvatar = item.avatar.replace('http://pnybr76es.bkt.clouddn.com/', 'http://pp6ab9tdt.bkt.clouddn.com/')  
         }
         await userModel.update({
           _id: item._id

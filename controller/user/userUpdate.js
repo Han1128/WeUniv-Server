@@ -70,7 +70,6 @@ class UserUpdate {
   // 更新用户密码
   async updateUserPwd(req, res, next) {
     try {
-      debugger
       await userModel.update({
         _id: req.body.userId
       }, {

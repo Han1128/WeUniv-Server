@@ -6,7 +6,7 @@ const userUpdateController = require('../controller/user/userUpdate');
 router.post('/login', userController.userLogin);
 router.post('/sendEmail', userController.sendEmail);
 router.post('/checkMail', userController.checkMail);
-router.post('/checkUserExist', userController.checkUserExist);
+router.get('/checkUserExist', userController.checkUserExist);
 router.post('/uploadAvatar', userController.uploadAvatar);
 router.get('/checkToken', userController.checkToken);
 router.get('/getUserDetails', userController.getUserDetails);
