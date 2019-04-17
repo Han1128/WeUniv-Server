@@ -130,12 +130,12 @@ class AdminSearch {
       let result;
       let count;
       if (req.query.type === 'article') {
-        result = await articleModel.find()
+        result = await articleModel.find({status: 1})
                 .populate('author')
                 .sort({'public_time': -1})
                 .skip(req.query.pageNum * 10)
                 .limit(10);
-        count = await articleModel.find({}).count();
+        count = await articleModel.find({status: 1}).count();
       }
       else if (req.query.type === 'user') {
         result = await userModel.find({})
@@ -173,7 +173,7 @@ class AdminSearch {
   async getMostData(req, res, next) {
     try {
       // 阅读前五
-      const mostReading = await articleModel.find({}, {viewsTime: 1, title: 1})
+      const mostReading = await articleModel.find({status: 1}, {viewsTime: 1, title: 1})
                             .populate({
                               path: 'author',
                               model: 'user',

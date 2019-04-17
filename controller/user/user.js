@@ -31,7 +31,13 @@ class User {
       else {
         // console.log('验证结果', Bcrypt.untieSalt(req.body.password, ret[0].password))
         // 将从数据库查到的用户密码进行解密比较
-        if (ret.length !== 0 && Bcrypt.untieSalt(req.body.password, ret[0].password)) {
+        if (ret.length !== 0 && !ret[0].status) {
+          res.send({
+            message: '该账号已失效，请联系管理员',
+            success: false
+          })
+        }
+        else if (ret.length !== 0 && Bcrypt.untieSalt(req.body.password, ret[0].password)) {
           // 生成token
           let token = Token.createToken({ name: req.body.email, longinDate: +new Date});
           // 更新token
@@ -208,7 +214,7 @@ class User {
   async getUserDetails(req, res) {
     try {
       let result = await userModel.findOne({ _id: req.query.id}, {
-        token: 0, status: 0, password: 0
+        token: 0, password: 0
       }).populate('follow').populate('schoolData');
       res.send({
         success: true,

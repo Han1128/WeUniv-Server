@@ -13,8 +13,9 @@ router.post('/addAdminSet', checkAdmin, adminUpdateController.addAdminSet);
 router.post('/addToHomeSwiper', checkAdmin, adminUpdateController.addToHomeSwiper);
 router.post('/addToHomeRecommend', checkAdmin, adminUpdateController.addToHomeRecommend);
 router.post('/addToRecommendUser', checkAdmin, adminUpdateController.addToRecommendUser);
+router.post('/adminUserVerificate', checkAdmin, adminUpdateController.adminUserVerificate);
 router.post('/resetPwdByAdmin', checkAdmin, adminUpdateController.resetPwdByAdmin); // 强制修改密码
-router.post('/deleteComment', checkAdmin, adminUpdateController.deleteComment);
+router.post('/commentMange', checkAdmin, adminUpdateController.commentMange);
 router.post('/deleteArticle', checkAdmin, adminUpdateController.deleteArticle);
 
 // 查询

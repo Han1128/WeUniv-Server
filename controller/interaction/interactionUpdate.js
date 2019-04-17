@@ -2,6 +2,7 @@ const userModel = require('../../models/user/user');
 const articleModel = require('../../models/article/article');
 const commentModel = require('../../models/Interaction/comment');
 const messageModel = require('../../models/message/message');
+// const io = require('../../app');
 const mongoose = require('mongoose')
 
 class InterActionUpdate {
@@ -39,12 +40,18 @@ class InterActionUpdate {
         })
         await newMessage.save();
         await userModel.update({ _id: req.body.authorId }, { $push: { message: newMessage._id }});
+        
+        // io.emit('receive_message')
+        // io.sockets.to(req.body.authorId).emit('receive_message')
+        // io.to(userSocket[req.body.authorId]).emit('receive_message')
+
         res.send({
           success: true,
           message: '操作成功'
         })
       }
     } catch (error) {
+      console.log('error', error)
       res.send({
         success: false,
         message: '更新操作失败,请重试'

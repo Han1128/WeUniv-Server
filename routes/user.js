@@ -3,6 +3,8 @@ const router = express.Router(); // 创建路由容器
 const userController = require('../controller/user/user');
 const userUpdateController = require('../controller/user/userUpdate');
 
+const Token = require('../middleware/token');
+
 router.post('/login', userController.userLogin);
 router.post('/sendEmail', userController.sendEmail);
 router.post('/checkMail', userController.checkMail);

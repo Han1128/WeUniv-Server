@@ -256,7 +256,7 @@ class Message {
       let result = await userModel.findOne({
         '_id': req.query.userId
       });
-      debugger
+      // debugger
       let likeCount = await messageModel.find({
         _id: {
           $in: result.message
@@ -289,6 +289,38 @@ class Message {
       res.send({
         success: false,
         message: '查询数量失败'
+      })
+    }
+  }
+  // 更新消息已读状态
+  async updateUnreadMsg(req, res, next) {
+    try {
+      let result = await userModel.findOne({_id: req.body.userId})
+      await messageModel.update(
+        {
+          '_id': {
+            $in: result.message
+          }
+        }, 
+        {
+          $set: {
+            hasRead: true
+          }
+        },
+        { 
+          multi: true
+        }
+      )
+      
+      res.json({
+          success: true,
+          message:'修改成功'
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'修改失败'
       })
     }
   }

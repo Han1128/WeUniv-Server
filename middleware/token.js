@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/index');
+const userModel = require('../models/user/user')
 
 class Token {
   createToken (data) {
@@ -15,13 +16,13 @@ class Token {
     //   }, cert, {algorithm: 'RS256'});
     //   return token;
   }
-  checkToken (token) {
-    jwt.verify(token, config.secret, (err, decoded) => {
+  async checkToken ( req, res, next ) {
+    const result = await userModel.findOne({ username: req.query.username })
+    jwt.verify(result.token, config.secret, (err, decoded) => {
       if (err) {
-        console.log('验证出错')
+        res.status(401).end();
       }
-      console.log('验证有效')
-      return decoded;
+      next()
     })
   }
   validateToken(req, res) {

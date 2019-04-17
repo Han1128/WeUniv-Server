@@ -18,7 +18,8 @@ async function getArticle(condition = {}, sort = {'public_time': -1}, skip = 0, 
       avatar: 1,
       like_article: 1,
       like_comment: 1,
-      collect: 1
+      collect: 1,
+      gender: 1
     }
   }).populate({
     path: 'commentFrom', // article中的关联名 不是关联文档的model名

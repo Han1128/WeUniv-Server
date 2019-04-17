@@ -147,7 +147,7 @@ class UserUpdate {
     try {
       let condition = {};
       condition[req.body.key] = req.body.value
-      debugger
+      // debugger
       await userModel.update({ _id: req.body.userId}, {
         $set: condition
       })

@@ -84,30 +84,38 @@ class AdminUpdate {
   // 管理员更新用户信息
   async updateUserByAdmin(req, res, next) {
     try {
+      let data = req.body.password ? {
+        username: req.body.username,
+        email: req.body.email,
+        userType: req.body.userType,
+        password: Bcrypt.genSalt(req.body.password),
+        gender: req.body.gender,
+        status: req.body.status
+      } : {
+        username: req.body.username,
+        email: req.body.email,
+        userType: req.body.userType,
+        gender: req.body.gender,
+        status: req.body.status
+      }
       await userModel.findOneAndUpdate(
         {
           _id: req.body.userId
         }, 
         {
-          $set: {
-            username: req.body.username,
-            email: req.body.email,
-            userType: req.body.userType,
-            password: Bcrypt.genSalt(req.body.password),
-            gender: req.body.gender
-          }
+          $set: data
         }
       )
       
       res.json({
           success: true,
-          message: '添加成功'
+          message: '修改成功'
       })
     } catch (error) {
       console.log('error', error)
       res.json({
           success: false,
-          message:'添加失败'
+          message:'修改失败'
       })
     }
   }
@@ -228,19 +236,20 @@ class AdminUpdate {
     }
   }
   // 删除评论
-  async deleteComment(req, res, next) {
+  async commentMange(req, res, next) {
     try {
       await commentionModel.update({
         _id: req.body.commentId  
       }, {
-        isEffect: false
+        isEffect: req.body.type !== 'delete'
       })
+      
       await articleModel.update({
         'commentFrom': {
           $in: req.body.commentId 
         }
       }, {
-        $inc: { 'comment_num': -1 }
+        $inc: { 'comment_num': req.body.type === 'delete' ? -1 : 1 }
       })
       res.json({
           success: true,
@@ -372,6 +381,32 @@ class AdminUpdate {
           avatar: newAvatar
         });
       }
+      res.json({
+          success: true,
+          message:'修改成功'
+      })
+    } catch (error) {
+      console.log('error', error)
+      res.json({
+          success: false,
+          message:'修改失败'
+      })
+    }
+  }
+  // 更新用户的验证状态
+  async adminUserVerificate(req, res, next) {
+    try {
+      await userModel.findOneAndUpdate(
+        {
+          _id: req.body.userId
+        }, 
+        {
+          $set: {
+            status: 2
+          }
+        }
+      )
+      
       res.json({
           success: true,
           message:'修改成功'

@@ -49,8 +49,30 @@ app.all('*', (req, res, next) => {
   }
 })
 
-app.listen(3000, function () {
-  console.log('app is running at port 3000')
-})
+const server = require('http').createServer(app);
+// const io = require('socket.io')(server);
+// global.io = io;
+// global.userSocket = {}
+// io.on('connection', function (socket) {
+//   console.log('socket.io连接成功');
+//   socket.on('user_login', function (data) {
+//     console.log('userid', data.userId)
+//     // userSocket[data.userId] = socket.id
+//     socket.join(data.userId)
+//     console.log('sockect', socket)
+//   })
+// });
 
-// module.exports = app
+// io.on('disconnect', function (socket) {
+//   socket.emit('user disconnected');
+// });
+
+server.listen(3000, function () {
+  console.log('app is running at port 3000')
+});
+
+// app.listen(3000, function () {
+//   console.log('app is running at port 3000')
+// })
+
+// module.exports = io
